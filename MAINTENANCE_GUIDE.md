@@ -361,6 +361,28 @@ interface AppSettings {
 - **Opciones**: Manual, Diario, Semanal, Quincenal, Mensual
 - **Por Defecto**: Semanal (7 días)
 
+### **Paleta de Colores (18 colores)**
+La aplicación utiliza una paleta de 18 colores vibrantes y modernos para categorías y niveles de urgencia:
+
+1. **Violeta** - `#8B5CF6` - Tecnología, Creatividad
+2. **Rosa** - `#EC4899` - Personal, Salud
+3. **Azul** - `#3B82F6` - Trabajo, Profesional
+4. **Verde Esmeralda** - `#10B981` - Finanzas, Éxito
+5. **Ámbar** - `#F59E0B` - Urgente, Importante
+6. **Rojo** - `#EF4444` - Crítico, Emergencia
+7. **Cian** - `#06B6D4` - Comunicación, Social
+8. **Verde Lima** - `#84CC16` - Naturaleza, Bienestar
+9. **Naranja** - `#F97316` - Energía, Motivación
+10. **Vino** - `#7C2D12` - Lujo, Premium
+11. **Verde Azulado** - `#14B8A6` - Calma, Serenidad
+12. **Rosa Coral** - `#F43F5E` - Amor, Relaciones
+13. **Índigo** - `#6366F1` - Sabiduría, Conocimiento
+14. **Verde** - `#22C55E` - Crecimiento, Desarrollo
+15. **Amarillo** - `#EAB308` - Optimismo, Alegría
+16. **Gris** - `#6B7280` - Neutral, Profesional
+17. **Azul Cielo** - `#0EA5E9` - Libertad, Aire
+18. **Marrón** - `#8B5A2B` - Estabilidad, Tierra
+
 ### **Categorías Predefinidas**
 - Trabajo (#3B82F6)
 - Personal (#10B981)
@@ -417,19 +439,24 @@ console.log('Task operation:', {
 - [ ] Marcado como completada/descompletada
 - [ ] Gestión de subtareas
 - [ ] Filtros y búsqueda
-- [ ] Gestión de categorías
-- [ ] Gestión de niveles de urgencia
+- [ ] Gestión de categorías (18 colores disponibles)
+- [ ] Gestión de niveles de urgencia (18 colores disponibles)
 - [ ] Configuración de expiración
 - [ ] Limpieza automática
 - [ ] Gestión de fechas (casos especiales)
 - [ ] Persistencia de datos
 - [ ] Estadísticas dinámicas
+- [ ] Sincronización de categorías entre modales
+- [ ] Rendimiento con listas grandes
+- [ ] Validaciones de formularios
 
 ### **Herramientas de Debugging**
 - **React Native Debugger**: Para debugging de React Native
 - **AsyncStorage Inspector**: Para inspeccionar datos almacenados
 - **Console Logs**: Para tracking de operaciones
 - **Alert Messages**: Para notificaciones de error
+- **Expo Dev Tools**: Para debugging en desarrollo
+- **Color Palette Script**: `node show-color-palette.js` para verificar colores
 
 ---
 
@@ -473,6 +500,8 @@ npx expo build:production
 - [ ] Revisar rendimiento de la aplicación
 - [ ] Actualizar dependencias si es necesario
 - [ ] Verificar integridad de datos
+- [ ] Comprobar sincronización de categorías y urgencias
+- [ ] Verificar paleta de colores en todos los modales
 
 ### **Tareas Mensuales**
 - [ ] Revisar estadísticas de uso
@@ -493,11 +522,25 @@ npx expo build:production
   - Errores de AsyncStorage
   - Tiempo de respuesta de operaciones
   - Tasa de crash
+  - Rendimiento de filtros y búsqueda
+  - Sincronización de estado entre componentes
+  - Validación de datos de categorías y urgencias
 
 ### **Backup y Recuperación**
 - **Estrategia de Backup**: Los datos se almacenan localmente
 - **Recuperación**: Regeneración automática de estructura por defecto
 - **Migración**: Actualización automática de esquemas de datos
+
+### **Gestión de Colores**
+- **Paleta Centralizada**: 18 colores definidos en todos los componentes
+- **Archivos de Configuración**:
+  - `components/AddTaskModal.tsx` - Colores para categorías y urgencias
+  - `components/CategoryManagerModal.tsx` - Colores para categorías
+  - `components/UrgencyManagerModal.tsx` - Colores para urgencias
+- **Documentación**: `COLOR_PALETTE.md` con detalles completos
+- **Script de Verificación**: `show-color-palette.js` para mostrar paleta
+- **Sincronización**: Todos los modales usan la misma paleta
+- **Validación**: Verificar que no haya colores duplicados o inconsistentes
 
 ---
 
@@ -505,6 +548,7 @@ npx expo build:production
 
 ### **Documentación Relacionada**
 - [DATE_MANAGEMENT_GUIDE.md](./DATE_MANAGEMENT_GUIDE.md) - Guía de gestión de fechas
+- [COLOR_PALETTE.md](./COLOR_PALETTE.md) - Documentación de la paleta de colores
 - [README.md](./README.md) - Documentación general del proyecto
 
 ### **Enlaces Útiles**
@@ -522,21 +566,29 @@ npx expo build:production
 ## 📝 Notas de Mantenimiento
 
 ### **Última Actualización**
-- **Fecha**: [Fecha actual]
-- **Versión**: 1.0.0
-- **Cambios Principales**: Implementación inicial completa
+- **Fecha**: Diciembre 2024
+- **Versión**: 1.3.0
+- **Cambios Principales**: 
+  - Paleta de colores actualizada (18 colores)
+  - Mejoras en gestión de categorías y urgencias
+  - Correcciones en modales de creación/edición
+  - Optimización de rendimiento con React.useMemo
+  - Configuración completa para iOS y EAS Build
 
 ### **Próximas Mejoras Planificadas**
 1. **Sincronización en la nube**
 2. **Notificaciones push**
-3. **Temas personalizables**
+3. **Temas personalizables (claro/oscuro)**
 4. **Exportación de datos**
 5. **Integración con calendarios**
+6. **Colores personalizados (selector RGB)**
+7. **Gradientes para categorías premium**
 
 ### **Historial de Cambios**
 - **v1.0.0**: Implementación inicial con todas las funcionalidades básicas
-- **v1.1.0**: Mejoras en gestión de fechas
-- **v1.2.0**: Sistema de limpieza automática
+- **v1.1.0**: Mejoras en gestión de fechas y validaciones
+- **v1.2.0**: Sistema de limpieza automática y configuración
+- **v1.3.0**: Paleta de colores expandida y optimizaciones de rendimiento
 
 ---
 

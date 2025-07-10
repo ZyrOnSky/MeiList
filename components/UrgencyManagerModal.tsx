@@ -38,8 +38,25 @@ export const UrgencyManagerModal: React.FC<UrgencyManagerModalProps> = ({
   const [newUrgencyColor, setNewUrgencyColor] = useState('#10B981');
 
   const predefinedColors = [
-    '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#3B82F6',
-    '#6366F1', '#8B5A2B', '#059669', '#DC2626', '#7C3AED', '#F97316'
+    // Colores para niveles de urgencia (más sutiles)
+    '#10B981', // Verde esmeralda (baja)
+    '#F59E0B', // Ámbar (media)
+    '#EF4444', // Rojo (alta)
+    '#06B6D4', // Cian
+    '#8B5CF6', // Violeta
+    '#EC4899', // Rosa
+    '#3B82F6', // Azul
+    '#84CC16', // Verde lima
+    '#F97316', // Naranja
+    '#7C2D12', // Vino
+    '#14B8A6', // Verde azulado
+    '#F43F5E', // Rosa coral
+    '#6366F1', // Índigo
+    '#22C55E', // Verde
+    '#EAB308', // Amarillo
+    '#6B7280', // Gris
+    '#0EA5E9', // Azul cielo
+    '#8B5A2B'  // Marrón
   ];
 
   const resetForm = () => {

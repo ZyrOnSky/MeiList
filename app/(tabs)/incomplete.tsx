@@ -80,7 +80,9 @@ export default function IncompleteScreen() {
   };
 
   const handleAddCategory = async (categoryData: Omit<Category, 'id' | 'createdAt'>) => {
-    await addCategory(categoryData);
+    const newCategory = await addCategory(categoryData);
+    // La nueva categoría se seleccionará automáticamente en el modal
+    console.log('Nueva categoría creada:', newCategory.name);
   };
 
   const handleAddUrgencyLevel = async (urgencyData: Omit<UrgencyLevel, 'id' | 'createdAt'>) => {
