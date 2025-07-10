@@ -1,16 +1,19 @@
 {
-  "name": "bolt-expo-starter",
+  "name": "meilist",
   "main": "expo-router/entry",
   "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "EXPO_NO_TELEMETRY=1 expo start",
+    "start": "expo start",
     "ios": "expo start --ios",
     "android": "expo start --android",
+    "web": "expo start --web",
     "build:web": "expo export --platform web",
     "build:ios": "eas build --platform ios",
     "build:android": "eas build --platform android",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "preview": "expo start --web --port 3000"
   },
   "expo": {
     "doctor": {

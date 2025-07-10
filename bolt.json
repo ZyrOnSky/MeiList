@@ -1,0 +1,41 @@
+{
+  "name": "MeiList",
+  "description": "Aplicación de gestión de tareas personalizada con categorías, niveles de urgencia y estadísticas dinámicas",
+  "type": "expo",
+  "framework": "react-native",
+  "language": "typescript",
+  "platforms": ["web", "ios", "android"],
+  "features": [
+    "task-management",
+    "categories",
+    "urgency-levels",
+    "statistics",
+    "local-storage",
+    "responsive-design"
+  ],
+  "keywords": [
+    "tasks",
+    "todo",
+    "productivity",
+    "organization",
+    "categories",
+    "statistics",
+    "mobile-app",
+    "react-native",
+    "expo"
+  ],
+  "author": {
+    "name": "zyronsky",
+    "github": "https://github.com/zyronsky"
+  },
+  "repository": {
+    "url": "https://github.com/ZyrOnSky/MeiList"
+  },
+  "startCommand": "npm start",
+  "buildCommand": "npm run build:web",
+  "devCommand": "npm run dev",
+  "port": 8081,
+  "env": {
+    "EXPO_NO_TELEMETRY": "1"
+  }
+} 

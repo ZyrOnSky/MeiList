@@ -1,13 +1,14 @@
 {
   "expo": {
     "name": "MeiList",
-    "slug": "MeiList",
+    "slug": "meilist",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "myapp",
+    "scheme": "meilist",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "description": "Aplicación de gestión de tareas personalizada con categorías, niveles de urgencia y estadísticas dinámicas",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.meilist.app",
@@ -22,7 +23,11 @@
     "web": {
       "bundler": "metro",
       "output": "single",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.png",
+      "title": "MeiList - Gestión de Tareas",
+      "description": "Organiza tus tareas con categorías, niveles de urgencia y estadísticas",
+      "themeColor": "#8B5CF6",
+      "backgroundColor": "#ffffff"
     },
     "plugins": [
       "expo-router",
