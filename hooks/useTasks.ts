@@ -3,6 +3,11 @@ import React from 'react';
 import { Task, Category, AppSettings, UrgencyLevel, TaskFilters } from '@/types/Task';
 import { StorageService } from '@/services/StorageService';
 
+// Función para generar IDs únicos
+const generateUniqueId = (): string => {
+  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+};
+
 export const useTasks = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -71,7 +76,7 @@ export const useTasks = () => {
   const addTask = async (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
     const newTask: Task = {
       ...task,
-      id: Date.now().toString(),
+      id: generateUniqueId(),
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -100,7 +105,7 @@ export const useTasks = () => {
   const addCategory = async (category: Omit<Category, 'id' | 'createdAt'>) => {
     const newCategory: Category = {
       ...category,
-      id: Date.now().toString(),
+      id: generateUniqueId(),
       createdAt: new Date(),
     };
     
@@ -123,7 +128,7 @@ export const useTasks = () => {
   const addUrgencyLevel = async (urgencyLevel: Omit<UrgencyLevel, 'id' | 'createdAt'>) => {
     const newUrgencyLevel: UrgencyLevel = {
       ...urgencyLevel,
-      id: Date.now().toString(),
+      id: generateUniqueId(),
       createdAt: new Date(),
     };
     

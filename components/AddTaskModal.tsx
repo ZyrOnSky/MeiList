@@ -14,6 +14,11 @@ import { X, Plus, Trash2, Calendar, Clock, Settings, Tag, AlertTriangle, CheckCi
 import { Task, Category, Subtask, UrgencyLevel } from '@/types/Task';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
+// Función para generar IDs únicos
+const generateUniqueId = (): string => {
+  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+};
+
 interface AddTaskModalProps {
   visible: boolean;
   onClose: () => void;
@@ -181,7 +186,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
     if (!newSubtask.trim()) return;
 
     const subtask: Subtask = {
-      id: Date.now().toString(),
+      id: generateUniqueId(),
       title: newSubtask.trim(),
       completed: false,
       createdAt: new Date(),
