@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "MeiList",
+    "slug": "MeiList",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "myapp",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.meilist.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Esta aplicación no requiere acceso a la cámara",
+        "NSPhotoLibraryUsageDescription": "Esta aplicación no requiere acceso a la galería de fotos",
+        "NSLocationWhenInUseUsageDescription": "Esta aplicación no requiere acceso a la ubicación"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-web-browser"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "fef35e97-81d6-4123-90d9-a194a77349c1"
+      }
+    },
+    "owner": "zyronsky"
+  }
+}
