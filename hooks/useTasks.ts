@@ -111,6 +111,9 @@ export const useTasks = () => {
     
     await StorageService.addCategory(newCategory);
     setCategories(prev => [...prev, newCategory]);
+    
+    // Retornar la nueva categoría para que pueda ser seleccionada automáticamente
+    return newCategory;
   };
 
   const updateCategory = async (categoryId: string, updates: Partial<Category>) => {

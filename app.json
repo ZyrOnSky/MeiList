@@ -15,7 +15,8 @@
       "infoPlist": {
         "NSCameraUsageDescription": "Esta aplicación no requiere acceso a la cámara",
         "NSPhotoLibraryUsageDescription": "Esta aplicación no requiere acceso a la galería de fotos",
-        "NSLocationWhenInUseUsageDescription": "Esta aplicación no requiere acceso a la ubicación"
+        "NSLocationWhenInUseUsageDescription": "Esta aplicación no requiere acceso a la ubicación",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "web": {

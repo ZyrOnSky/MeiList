@@ -93,7 +93,20 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
       setSubtasks([]);
     }
     setNewSubtask('');
-  }, [editingTask, categories, urgencyLevels]);
+  }, [editingTask]); // Removidas las dependencias categories y urgencyLevels
+
+  // Inicializar valores por defecto solo cuando se abre el modal para nueva tarea
+  useEffect(() => {
+    if (visible && !editingTask) {
+      // Solo inicializar si no hay tarea para editar y el modal está abierto
+      if (!title && categories.length > 0) {
+        setSelectedCategory(categories[0]?.id || '');
+      }
+      if (!selectedUrgency && urgencyLevels.length > 0) {
+        setSelectedUrgency(urgencyLevels[0]?.id || 'media');
+      }
+    }
+  }, [visible, editingTask, categories, urgencyLevels]);
 
   // Resetear formulario cuando se cierre el modal
   useEffect(() => {
@@ -213,13 +226,29 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
     }
 
     if (onAddCategory) {
-      onAddCategory({
+      // Crear la categoría
+      const newCategory = {
         name: newCategoryName.trim(),
         color: newCategoryColor,
-      });
+      };
+      
+      onAddCategory(newCategory);
+      
+      // Limpiar el formulario de nueva categoría
       setNewCategoryName('');
       setNewCategoryColor('#8B5CF6');
       setShowAddCategory(false);
+      
+      // Seleccionar automáticamente la nueva categoría
+      // Buscar la categoría recién creada en la lista actualizada
+      const newlyCreatedCategory = categories.find(cat => 
+        cat.name.toLowerCase() === newCategory.name.toLowerCase() &&
+        cat.color === newCategory.color
+      );
+      
+      if (newlyCreatedCategory) {
+        setSelectedCategory(newlyCreatedCategory.id);
+      }
     }
   };
 
