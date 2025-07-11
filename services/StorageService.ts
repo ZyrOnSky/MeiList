@@ -9,14 +9,24 @@ const STORAGE_KEYS = {
   EXPIRED_TASKS: 'expiredTasks',
 };
 
+// Función de logging mejorada para web
+const logStorage = (operation: string, data?: any) => {
+  if (typeof window !== 'undefined') {
+    console.log(`🔧 StorageService [${operation}]:`, data);
+  }
+};
+
 export class StorageService {
   // Tasks
   static async getTasks(): Promise<Task[]> {
     try {
+      logStorage('getTasks - iniciando');
       const data = await AsyncStorage.getItem(STORAGE_KEYS.TASKS);
+      logStorage('getTasks - datos obtenidos', data ? 'datos encontrados' : 'sin datos');
+      
       if (data) {
         const tasks = JSON.parse(data);
-        return tasks.map((task: any) => ({
+        const parsedTasks = tasks.map((task: any) => ({
           ...task,
           createdAt: new Date(task.createdAt),
           updatedAt: new Date(task.updatedAt),
@@ -24,96 +34,152 @@ export class StorageService {
           dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
           completedDate: task.completedDate ? new Date(task.completedDate) : undefined,
         }));
+        logStorage('getTasks - tareas parseadas', parsedTasks.length);
+        return parsedTasks;
       }
+      logStorage('getTasks - retornando array vacío');
       return [];
     } catch (error) {
-      console.error('Error getting tasks:', error);
+      console.error('❌ Error getting tasks:', error);
+      logStorage('getTasks - error', error);
       return [];
     }
   }
 
   static async saveTasks(tasks: Task[]): Promise<void> {
     try {
+      logStorage('saveTasks - guardando', tasks.length);
       await AsyncStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(tasks));
+      logStorage('saveTasks - guardado exitoso');
     } catch (error) {
-      console.error('Error saving tasks:', error);
+      console.error('❌ Error saving tasks:', error);
+      logStorage('saveTasks - error', error);
     }
   }
 
   static async addTask(task: Task): Promise<void> {
-    const tasks = await this.getTasks();
-    tasks.push(task);
-    await this.saveTasks(tasks);
+    try {
+      logStorage('addTask - añadiendo tarea', task.title);
+      const tasks = await this.getTasks();
+      tasks.push(task);
+      await this.saveTasks(tasks);
+      logStorage('addTask - tarea añadida exitosamente');
+    } catch (error) {
+      console.error('❌ Error adding task:', error);
+      logStorage('addTask - error', error);
+    }
   }
 
   static async updateTask(taskId: string, updates: Partial<Task>): Promise<void> {
-    console.log('StorageService: Updating task', taskId, 'with updates:', updates);
-    const tasks = await this.getTasks();
-    const index = tasks.findIndex(t => t.id === taskId);
-    if (index !== -1) {
-      const updatedTask = { ...tasks[index], ...updates, updatedAt: new Date() };
-      tasks[index] = updatedTask;
-      console.log('StorageService: Task updated successfully:', updatedTask.status);
-      await this.saveTasks(tasks);
-    } else {
-      console.log('StorageService: Task not found:', taskId);
+    try {
+      logStorage('updateTask - actualizando', { taskId, updates });
+      const tasks = await this.getTasks();
+      const index = tasks.findIndex(t => t.id === taskId);
+      if (index !== -1) {
+        const updatedTask = { ...tasks[index], ...updates, updatedAt: new Date() };
+        tasks[index] = updatedTask;
+        logStorage('updateTask - tarea actualizada', updatedTask.status);
+        await this.saveTasks(tasks);
+      } else {
+        logStorage('updateTask - tarea no encontrada', taskId);
+      }
+    } catch (error) {
+      console.error('❌ Error updating task:', error);
+      logStorage('updateTask - error', error);
     }
   }
 
   static async deleteTask(taskId: string): Promise<void> {
-    const tasks = await this.getTasks();
-    const filteredTasks = tasks.filter(t => t.id !== taskId);
-    await this.saveTasks(filteredTasks);
+    try {
+      logStorage('deleteTask - eliminando', taskId);
+      const tasks = await this.getTasks();
+      const filteredTasks = tasks.filter(t => t.id !== taskId);
+      await this.saveTasks(filteredTasks);
+      logStorage('deleteTask - tarea eliminada');
+    } catch (error) {
+      console.error('❌ Error deleting task:', error);
+      logStorage('deleteTask - error', error);
+    }
   }
 
   // Categories
   static async getCategories(): Promise<Category[]> {
     try {
+      logStorage('getCategories - iniciando');
       const data = await AsyncStorage.getItem(STORAGE_KEYS.CATEGORIES);
       if (data) {
         const categories = JSON.parse(data);
-        return categories.map((cat: any) => ({
+        const parsedCategories = categories.map((cat: any) => ({
           ...cat,
           createdAt: new Date(cat.createdAt),
         }));
+        logStorage('getCategories - categorías obtenidas', parsedCategories.length);
+        return parsedCategories;
       }
+      logStorage('getCategories - usando categorías por defecto');
       return this.getDefaultCategories();
     } catch (error) {
-      console.error('Error getting categories:', error);
+      console.error('❌ Error getting categories:', error);
+      logStorage('getCategories - error', error);
       return this.getDefaultCategories();
     }
   }
 
   static async saveCategories(categories: Category[]): Promise<void> {
     try {
+      logStorage('saveCategories - guardando', categories.length);
       await AsyncStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
+      logStorage('saveCategories - guardado exitoso');
     } catch (error) {
-      console.error('Error saving categories:', error);
+      console.error('❌ Error saving categories:', error);
+      logStorage('saveCategories - error', error);
     }
   }
 
   static async addCategory(category: Category): Promise<void> {
-    const categories = await this.getCategories();
-    categories.push(category);
-    await this.saveCategories(categories);
+    try {
+      logStorage('addCategory - añadiendo', category.name);
+      const categories = await this.getCategories();
+      categories.push(category);
+      await this.saveCategories(categories);
+      logStorage('addCategory - categoría añadida');
+    } catch (error) {
+      console.error('❌ Error adding category:', error);
+      logStorage('addCategory - error', error);
+    }
   }
 
   static async updateCategory(categoryId: string, updates: Partial<Category>): Promise<void> {
-    const categories = await this.getCategories();
-    const index = categories.findIndex(c => c.id === categoryId);
-    if (index !== -1) {
-      categories[index] = { ...categories[index], ...updates };
-      await this.saveCategories(categories);
+    try {
+      logStorage('updateCategory - actualizando', { categoryId, updates });
+      const categories = await this.getCategories();
+      const index = categories.findIndex(c => c.id === categoryId);
+      if (index !== -1) {
+        categories[index] = { ...categories[index], ...updates };
+        await this.saveCategories(categories);
+        logStorage('updateCategory - categoría actualizada');
+      }
+    } catch (error) {
+      console.error('❌ Error updating category:', error);
+      logStorage('updateCategory - error', error);
     }
   }
 
   static async deleteCategory(categoryId: string): Promise<void> {
-    const categories = await this.getCategories();
-    const filteredCategories = categories.filter(c => c.id !== categoryId);
-    await this.saveCategories(filteredCategories);
+    try {
+      logStorage('deleteCategory - eliminando', categoryId);
+      const categories = await this.getCategories();
+      const filteredCategories = categories.filter(c => c.id !== categoryId);
+      await this.saveCategories(filteredCategories);
+      logStorage('deleteCategory - categoría eliminada');
+    } catch (error) {
+      console.error('❌ Error deleting category:', error);
+      logStorage('deleteCategory - error', error);
+    }
   }
 
   static getDefaultCategories(): Category[] {
+    logStorage('getDefaultCategories - retornando categorías por defecto');
     return [
       {
         id: 'trabajo',
@@ -145,51 +211,81 @@ export class StorageService {
   // Urgency Levels
   static async getUrgencyLevels(): Promise<UrgencyLevel[]> {
     try {
+      logStorage('getUrgencyLevels - iniciando');
       const data = await AsyncStorage.getItem(STORAGE_KEYS.URGENCY_LEVELS);
       if (data) {
         const urgencyLevels = JSON.parse(data);
-        return urgencyLevels.map((level: any) => ({
+        const parsedLevels = urgencyLevels.map((level: any) => ({
           ...level,
           createdAt: new Date(level.createdAt),
         }));
+        logStorage('getUrgencyLevels - niveles obtenidos', parsedLevels.length);
+        return parsedLevels;
       }
+      logStorage('getUrgencyLevels - usando niveles por defecto');
       return this.getDefaultUrgencyLevels();
     } catch (error) {
-      console.error('Error getting urgency levels:', error);
+      console.error('❌ Error getting urgency levels:', error);
+      logStorage('getUrgencyLevels - error', error);
       return this.getDefaultUrgencyLevels();
     }
   }
 
   static async saveUrgencyLevels(urgencyLevels: UrgencyLevel[]): Promise<void> {
     try {
+      logStorage('saveUrgencyLevels - guardando', urgencyLevels.length);
       await AsyncStorage.setItem(STORAGE_KEYS.URGENCY_LEVELS, JSON.stringify(urgencyLevels));
+      logStorage('saveUrgencyLevels - guardado exitoso');
     } catch (error) {
-      console.error('Error saving urgency levels:', error);
+      console.error('❌ Error saving urgency levels:', error);
+      logStorage('saveUrgencyLevels - error', error);
     }
   }
 
   static async addUrgencyLevel(urgencyLevel: UrgencyLevel): Promise<void> {
-    const urgencyLevels = await this.getUrgencyLevels();
-    urgencyLevels.push(urgencyLevel);
-    await this.saveUrgencyLevels(urgencyLevels);
+    try {
+      logStorage('addUrgencyLevel - añadiendo', urgencyLevel.name);
+      const urgencyLevels = await this.getUrgencyLevels();
+      urgencyLevels.push(urgencyLevel);
+      await this.saveUrgencyLevels(urgencyLevels);
+      logStorage('addUrgencyLevel - nivel añadido');
+    } catch (error) {
+      console.error('❌ Error adding urgency level:', error);
+      logStorage('addUrgencyLevel - error', error);
+    }
   }
 
   static async updateUrgencyLevel(urgencyLevelId: string, updates: Partial<UrgencyLevel>): Promise<void> {
-    const urgencyLevels = await this.getUrgencyLevels();
-    const index = urgencyLevels.findIndex(u => u.id === urgencyLevelId);
-    if (index !== -1) {
-      urgencyLevels[index] = { ...urgencyLevels[index], ...updates };
-      await this.saveUrgencyLevels(urgencyLevels);
+    try {
+      logStorage('updateUrgencyLevel - actualizando', { urgencyLevelId, updates });
+      const urgencyLevels = await this.getUrgencyLevels();
+      const index = urgencyLevels.findIndex(u => u.id === urgencyLevelId);
+      if (index !== -1) {
+        urgencyLevels[index] = { ...urgencyLevels[index], ...updates };
+        await this.saveUrgencyLevels(urgencyLevels);
+        logStorage('updateUrgencyLevel - nivel actualizado');
+      }
+    } catch (error) {
+      console.error('❌ Error updating urgency level:', error);
+      logStorage('updateUrgencyLevel - error', error);
     }
   }
 
   static async deleteUrgencyLevel(urgencyLevelId: string): Promise<void> {
-    const urgencyLevels = await this.getUrgencyLevels();
-    const filteredUrgencyLevels = urgencyLevels.filter(u => u.id !== urgencyLevelId);
-    await this.saveUrgencyLevels(filteredUrgencyLevels);
+    try {
+      logStorage('deleteUrgencyLevel - eliminando', urgencyLevelId);
+      const urgencyLevels = await this.getUrgencyLevels();
+      const filteredUrgencyLevels = urgencyLevels.filter(u => u.id !== urgencyLevelId);
+      await this.saveUrgencyLevels(filteredUrgencyLevels);
+      logStorage('deleteUrgencyLevel - nivel eliminado');
+    } catch (error) {
+      console.error('❌ Error deleting urgency level:', error);
+      logStorage('deleteUrgencyLevel - error', error);
+    }
   }
 
   static getDefaultUrgencyLevels(): UrgencyLevel[] {
+    logStorage('getDefaultUrgencyLevels - retornando niveles por defecto');
     return [
       {
         id: 'alta',
@@ -218,48 +314,55 @@ export class StorageService {
   // Settings
   static async getSettings(): Promise<AppSettings> {
     try {
+      logStorage('getSettings - iniciando');
       const data = await AsyncStorage.getItem(STORAGE_KEYS.SETTINGS);
       if (data) {
         const settings = JSON.parse(data);
+        logStorage('getSettings - configuración obtenida');
         return {
           ...settings,
-          lastCleanup: new Date(settings.lastCleanup),
+          lastCleanup: settings.lastCleanup ? new Date(settings.lastCleanup) : new Date(),
         };
       }
-      return {
-        completedTaskExpirationDays: 30,
-        overdueTaskExpirationDays: 90, // Por defecto 90 días para tareas vencidas
-        historyRetentionMonths: 3,
-        cleanupFrequencyDays: 7, // Por defecto cada 7 días
-        lastCleanup: new Date(),
-      };
+      logStorage('getSettings - usando configuración por defecto');
+      return this.getDefaultSettings();
     } catch (error) {
-      console.error('Error getting settings:', error);
-      return {
-        completedTaskExpirationDays: 30,
-        overdueTaskExpirationDays: 90, // Por defecto 90 días para tareas vencidas
-        historyRetentionMonths: 3,
-        cleanupFrequencyDays: 7, // Por defecto cada 7 días
-        lastCleanup: new Date(),
-      };
+      console.error('❌ Error getting settings:', error);
+      logStorage('getSettings - error', error);
+      return this.getDefaultSettings();
     }
   }
 
   static async saveSettings(settings: AppSettings): Promise<void> {
     try {
+      logStorage('saveSettings - guardando');
       await AsyncStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+      logStorage('saveSettings - guardado exitoso');
     } catch (error) {
-      console.error('Error saving settings:', error);
+      console.error('❌ Error saving settings:', error);
+      logStorage('saveSettings - error', error);
     }
   }
 
-  // Expired tasks
+  static getDefaultSettings(): AppSettings {
+    logStorage('getDefaultSettings - retornando configuración por defecto');
+    return {
+      completedTaskExpirationDays: 30,
+      overdueTaskExpirationDays: 90,
+      historyRetentionMonths: 3,
+      cleanupFrequencyDays: 7,
+      lastCleanup: new Date(),
+    };
+  }
+
+  // Expired Tasks
   static async getExpiredTasks(): Promise<Task[]> {
     try {
+      logStorage('getExpiredTasks - iniciando');
       const data = await AsyncStorage.getItem(STORAGE_KEYS.EXPIRED_TASKS);
       if (data) {
         const tasks = JSON.parse(data);
-        return tasks.map((task: any) => ({
+        const parsedTasks = tasks.map((task: any) => ({
           ...task,
           createdAt: new Date(task.createdAt),
           updatedAt: new Date(task.updatedAt),
@@ -267,169 +370,132 @@ export class StorageService {
           dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
           completedDate: task.completedDate ? new Date(task.completedDate) : undefined,
         }));
+        logStorage('getExpiredTasks - tareas expiradas obtenidas', parsedTasks.length);
+        return parsedTasks;
       }
+      logStorage('getExpiredTasks - sin tareas expiradas');
       return [];
     } catch (error) {
-      console.error('Error getting expired tasks:', error);
+      console.error('❌ Error getting expired tasks:', error);
+      logStorage('getExpiredTasks - error', error);
       return [];
     }
   }
 
   static async saveExpiredTasks(tasks: Task[]): Promise<void> {
     try {
+      logStorage('saveExpiredTasks - guardando', tasks.length);
       await AsyncStorage.setItem(STORAGE_KEYS.EXPIRED_TASKS, JSON.stringify(tasks));
+      logStorage('saveExpiredTasks - guardado exitoso');
     } catch (error) {
-      console.error('Error saving expired tasks:', error);
+      console.error('❌ Error saving expired tasks:', error);
+      logStorage('saveExpiredTasks - error', error);
     }
   }
 
-  // Helper function to compare dates by day (ignoring time)
+  // Helper methods
   private static isDateOverdue(dueDate: Date): boolean {
-    const now = new Date();
-    const dueDay = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
-    // Una tarea está vencida si su fecha de vencimiento es anterior a hoy
-    return dueDay < today;
+    const today = new Date();
+    today.setHours(23, 59, 59, 999); // End of today
+    return dueDate < today;
   }
 
-  // Helper function to check if task was created today
   private static isTaskCreatedToday(task: Task): boolean {
-    if (!task.createdAt) return false;
-    
-    const now = new Date();
-    const createdDay = new Date(task.createdAt.getFullYear(), task.createdAt.getMonth(), task.createdAt.getDate());
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
-    return createdDay.getTime() === today.getTime();
+    const today = new Date();
+    const createdDate = new Date(task.createdAt);
+    return createdDate.toDateString() === today.toDateString();
   }
 
-  // Helper function to check if due date is today
   private static isDueDateToday(dueDate: Date): boolean {
-    const now = new Date();
-    const dueDay = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
-    return dueDay.getTime() === today.getTime();
+    const today = new Date();
+    return dueDate.toDateString() === today.toDateString();
   }
 
-  // Public helper function to check if a task is overdue (for use in components)
   static isTaskOverdue(task: Task): boolean {
-    if (!task.dueDate) return false;
-    
-    // Caso especial: Tarea creada hoy con fecha de vencimiento hoy
-    if (task.createdAt) {
-      const now = new Date();
-      const createdDay = new Date(task.createdAt.getFullYear(), task.createdAt.getMonth(), task.createdAt.getDate());
-      const dueDay = new Date(task.dueDate.getFullYear(), task.dueDate.getMonth(), task.dueDate.getDate());
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      
-      if (createdDay.getTime() === today.getTime() && dueDay.getTime() === today.getTime()) {
-        return false; // No mostrar como vencida si fue creada hoy y vence hoy
-      }
+    if (!task.dueDate || task.status === 'completed') {
+      return false;
     }
-    
-    // Comparar solo días (ignorar horas/minutos)
+
+    // Si la tarea fue creada hoy y vence hoy, no se considera vencida
+    if (this.isTaskCreatedToday(task) && this.isDueDateToday(task.dueDate)) {
+      return false;
+    }
+
     return this.isDateOverdue(task.dueDate);
   }
 
-  // Cleanup expired tasks
+  // Cleanup methods
   static async cleanupExpiredTasks(): Promise<{ expiredCount: number; overdueCount: number; overdueExpiredCount: number }> {
-    const tasks = await this.getTasks();
-    const expiredTasks = await this.getExpiredTasks();
-    const settings = await this.getSettings();
-    
-    const now = new Date();
-    let expiredCount = 0;
-    let overdueCount = 0;
-    let overdueExpiredCount = 0;
-
-    // Marcar tareas vencidas automáticamente con lógica inteligente
-    let updatedTasks = tasks.map(task => {
-      if (task.status === 'pending' && task.dueDate) {
-        // Caso especial: Tarea creada hoy con fecha de vencimiento hoy
-        if (this.isTaskCreatedToday(task) && this.isDueDateToday(task.dueDate)) {
-          // No marcar como vencida si fue creada hoy y vence hoy
-          return task;
-        }
-        
-        // Verificar si está vencida (comparando solo días)
-        if (this.isDateOverdue(task.dueDate)) {
+    try {
+      logStorage('cleanupExpiredTasks - iniciando limpieza');
+      
+      const tasks = await this.getTasks();
+      const settings = await this.getSettings();
+      const expiredTasks = await this.getExpiredTasks();
+      
+      let expiredCount = 0;
+      let overdueCount = 0;
+      let overdueExpiredCount = 0;
+      
+      const now = new Date();
+      const activeTasks: Task[] = [];
+      
+      for (const task of tasks) {
+        // Marcar tareas vencidas
+        if (task.status === 'pending' && this.isTaskOverdue(task)) {
+          task.status = 'overdue';
           overdueCount++;
-          return { ...task, status: 'overdue' as const };
         }
-      }
-      return task;
-    });
-
-    // Limpiar tareas vencidas expiradas
-    if (settings.overdueTaskExpirationDays > 0) {
-      const overdueExpirationDate = new Date(now.getTime() - settings.overdueTaskExpirationDays * 24 * 60 * 60 * 1000);
-      
-      const overdueTasksToExpire = updatedTasks.filter(task => 
-        task.status === 'overdue' && 
-        task.dueDate && 
-        task.dueDate < overdueExpirationDate
-      );
-
-      if (overdueTasksToExpire.length > 0) {
-        overdueExpiredCount = overdueTasksToExpire.length;
-        updatedTasks = updatedTasks.filter(task => 
-          !(task.status === 'overdue' && 
-            task.dueDate && 
-            task.dueDate < overdueExpirationDate)
-        );
         
-        await this.saveExpiredTasks([...expiredTasks, ...overdueTasksToExpire]);
-        console.log(`Overdue cleanup: ${overdueExpiredCount} overdue tasks expired and moved to history`);
-      }
-    }
-
-    // Limpiar tareas completadas expiradas
-    if (settings.completedTaskExpirationDays > 0) {
-      const completedExpirationDate = new Date(now.getTime() - settings.completedTaskExpirationDays * 24 * 60 * 60 * 1000);
-      
-      const completedTasksToExpire = updatedTasks.filter(task => 
-        task.status === 'completed' && 
-        task.completedDate && 
-        task.completedDate < completedExpirationDate
-      );
-
-      if (completedTasksToExpire.length > 0) {
-        expiredCount = completedTasksToExpire.length;
-        updatedTasks = updatedTasks.filter(task => 
-          !(task.status === 'completed' && 
-            task.completedDate && 
-            task.completedDate < completedExpirationDate)
-        );
+        // Mover tareas completadas expiradas al historial
+        if (task.status === 'completed' && task.completedDate) {
+          const daysSinceCompleted = Math.floor((now.getTime() - task.completedDate.getTime()) / (1000 * 60 * 60 * 24));
+          if (daysSinceCompleted >= settings.completedTaskExpirationDays) {
+            expiredTasks.push(task);
+            expiredCount++;
+            continue;
+          }
+        }
         
-        await this.saveExpiredTasks([...expiredTasks, ...completedTasksToExpire]);
-        console.log(`Completed cleanup: ${expiredCount} completed tasks expired and moved to history`);
+        // Mover tareas vencidas expiradas al historial
+        if (task.status === 'overdue') {
+          const daysSinceOverdue = Math.floor((now.getTime() - task.dueDate!.getTime()) / (1000 * 60 * 60 * 24));
+          if (daysSinceOverdue >= settings.overdueTaskExpirationDays) {
+            expiredTasks.push(task);
+            overdueExpiredCount++;
+            continue;
+          }
+        }
+        
+        activeTasks.push(task);
       }
-    }
-
-    // Guardar tareas actualizadas
-    if (overdueCount > 0 || expiredCount > 0 || overdueExpiredCount > 0) {
-      await this.saveTasks(updatedTasks);
       
-      // Actualizar configuración
-      await this.saveSettings({
-        ...settings,
-        lastCleanup: now,
-      });
+      // Guardar cambios
+      await this.saveTasks(activeTasks);
+      await this.saveExpiredTasks(expiredTasks);
+      await this.saveSettings({ ...settings, lastCleanup: now });
+      
+      logStorage('cleanupExpiredTasks - limpieza completada', { expiredCount, overdueCount, overdueExpiredCount });
+      
+      return { expiredCount, overdueCount, overdueExpiredCount };
+    } catch (error) {
+      console.error('❌ Error during cleanup:', error);
+      logStorage('cleanupExpiredTasks - error', error);
+      return { expiredCount: 0, overdueCount: 0, overdueExpiredCount: 0 };
     }
-
-    console.log(`Cleanup completed: ${expiredCount} completed tasks, ${overdueCount} overdue tasks marked, ${overdueExpiredCount} overdue tasks expired`);
-    return { expiredCount, overdueCount, overdueExpiredCount };
   }
 
-  // Check if cleanup is needed
   static async shouldRunCleanup(): Promise<boolean> {
-    const settings = await this.getSettings();
-    const now = new Date();
-    const daysSinceLastCleanup = (now.getTime() - settings.lastCleanup.getTime()) / (1000 * 60 * 60 * 24);
-    
-    // Ejecutar limpieza según la frecuencia configurada o si nunca se ha ejecutado
-    return daysSinceLastCleanup >= settings.cleanupFrequencyDays || settings.lastCleanup.getTime() === 0;
+    try {
+      const settings = await this.getSettings();
+      const daysSinceLastCleanup = Math.floor((new Date().getTime() - settings.lastCleanup.getTime()) / (1000 * 60 * 60 * 24));
+      const shouldRun = daysSinceLastCleanup >= settings.cleanupFrequencyDays;
+      logStorage('shouldRunCleanup', { daysSinceLastCleanup, shouldRun });
+      return shouldRun;
+    } catch (error) {
+      console.error('❌ Error checking cleanup schedule:', error);
+      logStorage('shouldRunCleanup - error', error);
+      return false;
+    }
   }
 }
