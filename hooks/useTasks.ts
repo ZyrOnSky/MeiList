@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import React from 'react';
 import { Task, Category, AppSettings, UrgencyLevel, TaskFilters } from '@/types/Task';
 import { StorageService } from '@/services/StorageService';
+import { Platform } from 'react-native';
 
 // Función para generar IDs únicos
 const generateUniqueId = (): string => {
@@ -25,6 +26,18 @@ export const useTasks = () => {
 
   useEffect(() => {
     loadData();
+  }, []);
+
+  // Efecto para sincronizar estado en web
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      // En web, forzar una actualización adicional para asegurar sincronización
+      const interval = setInterval(() => {
+        setForceUpdate(prev => prev + 1);
+      }, 1000); // Actualizar cada segundo en web
+
+      return () => clearInterval(interval);
+    }
   }, []);
 
   // Limpieza automática cada vez que se carga la aplicación
@@ -100,15 +113,16 @@ export const useTasks = () => {
       return updatedTasks;
     });
     
-    // Forzar actualización de vistas después de cambiar estado
-    if (updates.status) {
-      setForceUpdate(prev => prev + 1);
-    }
+    // Forzar actualización de vistas después de cualquier cambio
+    setForceUpdate(prev => prev + 1);
   };
 
   const deleteTask = async (taskId: string) => {
     await StorageService.deleteTask(taskId);
     setTasks(prev => prev.filter(task => task.id !== taskId));
+    
+    // Forzar actualización de vistas después de eliminar
+    setForceUpdate(prev => prev + 1);
   };
 
   const addCategory = async (category: Omit<Category, 'id' | 'createdAt'>) => {

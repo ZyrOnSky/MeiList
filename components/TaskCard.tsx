@@ -6,6 +6,7 @@ import {
   StyleSheet, 
   Dimensions,
   Alert,
+  Platform,
 } from 'react-native';
 import { CircleCheck as CheckCircle, Circle, Calendar, Clock, TriangleAlert as AlertTriangle, ChevronDown, ChevronRight, MoreHorizontal, Trash2 } from 'lucide-react-native';
 import { Task, Category, UrgencyLevel } from '@/types/Task';
@@ -69,13 +70,20 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   const formatDate = (date: Date | undefined) => {
     if (!date) return '';
     return date.toLocaleDateString('es-ES', {
-      month: 'short',
-      day: 'numeric',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
     });
   };
 
   const formatTime = (date: Date | undefined) => {
     if (!date) return '';
+    // Solo mostrar hora si no es 00:00 (medianoche)
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+    if (hours === 0 && minutes === 0) {
+      return '';
+    }
     return date.toLocaleTimeString('es-ES', {
       hour: '2-digit',
       minute: '2-digit',
@@ -97,21 +105,32 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   const handleDelete = () => {
     if (!onDelete) return;
 
-    Alert.alert(
-      'Eliminar Tarea',
-      `¿Estás seguro de que quieres eliminar la tarea "${task.title}"?\n\nEsta acción eliminará la tarea y todas sus subtareas de forma permanente.`,
-      [
-        {
-          text: 'Cancelar',
-          style: 'cancel',
-        },
-        {
-          text: 'Eliminar',
-          style: 'destructive',
-          onPress: () => onDelete(task.id),
-        },
-      ]
-    );
+    // Para web, usar confirm nativo
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm(
+        `¿Estás seguro de que quieres eliminar la tarea "${task.title}"?\n\nEsta acción eliminará la tarea y todas sus subtareas de forma permanente.`
+      );
+      if (confirmed) {
+        onDelete(task.id);
+      }
+    } else {
+      // Para móvil, usar Alert nativo
+      Alert.alert(
+        'Eliminar Tarea',
+        `¿Estás seguro de que quieres eliminar la tarea "${task.title}"?\n\nEsta acción eliminará la tarea y todas sus subtareas de forma permanente.`,
+        [
+          {
+            text: 'Cancelar',
+            style: 'cancel',
+          },
+          {
+            text: 'Eliminar',
+            style: 'destructive',
+            onPress: () => onDelete(task.id),
+          },
+        ]
+      );
+    }
   };
 
   return (
@@ -291,7 +310,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             <View style={styles.infoItem}>
               <Clock size={12} color="#6B7280" />
               <Text style={styles.infoText}>
-                Inicio: {formatDate(task.startDate)} {formatTime(task.startDate)}
+                Inicio: {formatDate(task.startDate)}
+                {formatTime(task.startDate) && ` ${formatTime(task.startDate)}`}
               </Text>
             </View>
           )}
@@ -300,7 +320,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             <View style={styles.infoItem}>
               <CheckCircle size={12} color="#10B981" />
               <Text style={styles.infoText}>
-                Completada: {formatDate(task.completedDate)} {formatTime(task.completedDate)}
+                Completada: {formatDate(task.completedDate)}
+                {formatTime(task.completedDate) && ` ${formatTime(task.completedDate)}`}
               </Text>
             </View>
           )}
@@ -308,11 +329,11 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         
         <View style={styles.taskDates}>
           <Text style={styles.dateLabel}>
-            Creada: {task.createdAt?.toLocaleDateString('es-ES') || 'N/A'}
+            Creada: {task.createdAt ? formatDate(task.createdAt) : 'N/A'}
           </Text>
           {task.updatedAt && task.createdAt && task.updatedAt.getTime() !== task.createdAt.getTime() && (
             <Text style={styles.dateLabel}>
-              Actualizada: {task.updatedAt.toLocaleDateString('es-ES')}
+              Actualizada: {formatDate(task.updatedAt)}
             </Text>
           )}
         </View>

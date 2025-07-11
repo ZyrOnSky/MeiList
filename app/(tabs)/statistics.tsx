@@ -22,7 +22,7 @@ import {
   Tag,
   Settings
 } from 'lucide-react-native';
-import { useTasks } from '@/hooks/useTasks';
+import { useTaskContext } from '@/contexts/TaskContext';
 import { CategoryManagerModal } from '@/components/CategoryManagerModal';
 import { UrgencyManagerModal } from '@/components/UrgencyManagerModal';
 import { SettingsModal } from '@/components/SettingsModal';
@@ -46,7 +46,7 @@ export default function StatisticsScreen() {
     deleteUrgencyLevel,
     updateSettings,
     runManualCleanup,
-  } = useTasks();
+  } = useTaskContext();
 
   const [showCategoryManager, setShowCategoryManager] = useState(false);
   const [showUrgencyManager, setShowUrgencyManager] = useState(false);

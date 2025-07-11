@@ -16,6 +16,7 @@ import {
   Poppins_700Bold,
 } from '@expo-google-fonts/poppins';
 import * as SplashScreen from 'expo-splash-screen';
+import { TaskProvider } from '@/contexts/TaskContext';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -44,12 +45,12 @@ export default function RootLayout() {
   }
 
   return (
-    <>
+    <TaskProvider>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="light" />
-    </>
+    </TaskProvider>
   );
 }

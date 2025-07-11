@@ -13,7 +13,7 @@ import { TaskCard } from '@/components/TaskCard';
 import { AddTaskModal } from '@/components/AddTaskModal';
 import { FilterModal } from '@/components/FilterModal';
 import { SearchBar } from '@/components/SearchBar';
-import { useTasks } from '@/hooks/useTasks';
+import { useTaskContext } from '@/contexts/TaskContext';
 import { Task, Category, UrgencyLevel } from '@/types/Task';
 
 export default function CompletedScreen() {
@@ -29,7 +29,7 @@ export default function CompletedScreen() {
     addCategory,
     addUrgencyLevel,
     refreshData,
-  } = useTasks();
+  } = useTaskContext();
 
   // Validar que los arrays existan antes de usarlos
   const tasks = completedTasks || [];

@@ -330,6 +330,18 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
     });
   };
 
+  // Función auxiliar para crear fechas en zona horaria local
+  const createLocalDate = (dateString: string): Date => {
+    const [year, month, day] = dateString.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  };
+
+  // Función auxiliar para formatear fecha para input HTML
+  const formatDateForInput = (date: Date | undefined): string => {
+    if (!date) return '';
+    return date.toLocaleDateString('en-CA'); // Formato YYYY-MM-DD
+  };
+
   return (
     <Modal
       visible={visible}
@@ -585,43 +597,126 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
             <View style={styles.dateRow}>
               <View style={styles.dateColumn}>
                 <Text style={styles.label}>Fecha de Inicio</Text>
-                <TouchableOpacity 
-                  style={styles.dateButton}
-                  onPress={() => setShowStartDatePicker(true)}
-                >
-                  <Clock size={18} color="#6B7280" />
-                  <Text style={styles.dateText}>
-                    {startDate ? formatDate(startDate) : 'Seleccionar'}
-                  </Text>
-                </TouchableOpacity>
-                {startDate && (
-                  <TouchableOpacity 
-                    style={styles.clearDateButton}
-                    onPress={() => setStartDate(undefined)}
-                  >
-                    <Text style={styles.clearDateText}>Limpiar</Text>
-                  </TouchableOpacity>
+                {Platform.OS === 'web' ? (
+                  <View style={styles.dateInputContainer}>
+                    <View style={styles.webDateButton}>
+                      <Clock size={18} color="#6B7280" />
+                      <input
+                        type="date"
+                                              value={formatDateForInput(startDate)}
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          setStartDate(createLocalDate(e.target.value));
+                        } else {
+                          setStartDate(undefined);
+                        }
+                      }}
+                        style={{
+                          backgroundColor: 'transparent',
+                          border: 'none',
+                          fontSize: 16,
+                          fontFamily: 'Inter-Regular',
+                          color: '#1F2937',
+                          outline: 'none',
+                          flex: 1,
+                          marginLeft: 8,
+                          cursor: 'pointer',
+                        }}
+                        placeholder="Seleccionar fecha"
+                      />
+                    </View>
+                    {startDate && (
+                      <TouchableOpacity 
+                        style={styles.clearDateButton}
+                        onPress={() => setStartDate(undefined)}
+                      >
+                        <Text style={styles.clearDateText}>Limpiar</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                ) : (
+                  <>
+                    <TouchableOpacity 
+                      style={styles.dateButton}
+                      onPress={() => setShowStartDatePicker(true)}
+                    >
+                      <Clock size={18} color="#6B7280" />
+                      <Text style={styles.dateText}>
+                        {startDate ? formatDate(startDate) : 'Seleccionar'}
+                      </Text>
+                    </TouchableOpacity>
+                    {startDate && (
+                      <TouchableOpacity 
+                        style={styles.clearDateButton}
+                        onPress={() => setStartDate(undefined)}
+                      >
+                        <Text style={styles.clearDateText}>Limpiar</Text>
+                      </TouchableOpacity>
+                    )}
+                  </>
                 )}
               </View>
               
               <View style={styles.dateColumn}>
                 <Text style={styles.label}>Fecha de Finalización</Text>
-                <TouchableOpacity 
-                  style={styles.dateButton}
-                  onPress={() => setShowDueDatePicker(true)}
-                >
-                  <Calendar size={18} color="#6B7280" />
-                  <Text style={styles.dateText}>
-                    {dueDate ? formatDate(dueDate) : 'Seleccionar'}
-                  </Text>
-                </TouchableOpacity>
-                {dueDate && (
-                  <TouchableOpacity 
-                    style={styles.clearDateButton}
-                    onPress={() => setDueDate(undefined)}
-                  >
-                    <Text style={styles.clearDateText}>Limpiar</Text>
-                  </TouchableOpacity>
+                {Platform.OS === 'web' ? (
+                  <View style={styles.dateInputContainer}>
+                    <View style={styles.webDateButton}>
+                      <Calendar size={18} color="#6B7280" />
+                      <input
+                        type="date"
+                        value={formatDateForInput(dueDate)}
+                        min={formatDateForInput(startDate)}
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            setDueDate(createLocalDate(e.target.value));
+                          } else {
+                            setDueDate(undefined);
+                          }
+                        }}
+                        style={{
+                          backgroundColor: 'transparent',
+                          border: 'none',
+                          fontSize: 16,
+                          fontFamily: 'Inter-Regular',
+                          color: '#1F2937',
+                          outline: 'none',
+                          flex: 1,
+                          marginLeft: 8,
+                          cursor: 'pointer',
+                        }}
+                        placeholder="Seleccionar fecha"
+                      />
+                    </View>
+                    {dueDate && (
+                      <TouchableOpacity 
+                        style={styles.clearDateButton}
+                        onPress={() => setDueDate(undefined)}
+                      >
+                        <Text style={styles.clearDateText}>Limpiar</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                ) : (
+                  <>
+                    <TouchableOpacity 
+                      style={styles.dateButton}
+                      onPress={() => setShowDueDatePicker(true)}
+                    >
+                      <Calendar size={18} color="#6B7280" />
+                      <Text style={styles.dateText}>
+                        {dueDate ? formatDate(dueDate) : 'Seleccionar'}
+                      </Text>
+                    </TouchableOpacity>
+                    {dueDate && (
+                      <TouchableOpacity 
+                        style={styles.clearDateButton}
+                        onPress={() => setDueDate(undefined)}
+                      >
+                        <Text style={styles.clearDateText}>Limpiar</Text>
+                      </TouchableOpacity>
+                    )}
+                  </>
                 )}
               </View>
             </View>
@@ -710,10 +805,10 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
           <DateTimePicker
             value={startDate || new Date()}
             mode="date"
-            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            display={Platform.OS === 'ios' ? 'spinner' : Platform.OS === 'web' ? 'inline' : 'default'}
             onChange={(event, selectedDate) => {
               setShowStartDatePicker(false);
-              if (selectedDate) {
+              if (selectedDate && event.type !== 'dismissed') {
                 setStartDate(selectedDate);
               }
             }}
@@ -724,11 +819,11 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
           <DateTimePicker
             value={dueDate || new Date()}
             mode="date"
-            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            display={Platform.OS === 'ios' ? 'spinner' : Platform.OS === 'web' ? 'inline' : 'default'}
             minimumDate={startDate || new Date()}
             onChange={(event, selectedDate) => {
               setShowDueDatePicker(false);
-              if (selectedDate) {
+              if (selectedDate && event.type !== 'dismissed') {
                 setDueDate(selectedDate);
               }
             }}
@@ -979,10 +1074,24 @@ const styles = StyleSheet.create({
   },
   dateRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: Platform.OS === 'web' ? 16 : 12,
   },
   dateColumn: {
     flex: 1,
+  },
+  dateInputContainer: {
+    width: '100%',
+    marginBottom: 8,
+  },
+  webDateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    minHeight: 56,
   },
   dateButton: {
     flexDirection: 'row',
