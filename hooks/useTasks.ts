@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import React from 'react';
-import { Task, Category, AppSettings, UrgencyLevel, TaskFilters } from '@/types/Task';
+import { Task, Category, AppSettings, UrgencyLevel, TaskFilters, TaskHistory } from '@/types/Task';
 import { StorageService } from '@/services/StorageService';
 import { Platform } from 'react-native';
 
@@ -11,6 +11,7 @@ const generateUniqueId = (): string => {
 
 export const useTasks = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [taskHistory, setTaskHistory] = useState<TaskHistory[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [urgencyLevels, setUrgencyLevels] = useState<UrgencyLevel[]>([]);
   const [settings, setSettings] = useState<AppSettings | null>(null);
@@ -66,14 +67,16 @@ export const useTasks = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [tasksData, categoriesData, urgencyLevelsData, settingsData] = await Promise.all([
+      const [tasksData, historyData, categoriesData, urgencyLevelsData, settingsData] = await Promise.all([
         StorageService.getTasks(),
+        StorageService.getTaskHistory(),
         StorageService.getCategories(),
         StorageService.getUrgencyLevels(),
         StorageService.getSettings(),
       ]);
 
       setTasks(tasksData);
+      setTaskHistory(historyData);
       setCategories(categoriesData);
       setUrgencyLevels(urgencyLevelsData);
       setSettings(settingsData);
@@ -120,6 +123,10 @@ export const useTasks = () => {
   const deleteTask = async (taskId: string) => {
     await StorageService.deleteTask(taskId);
     setTasks(prev => prev.filter(task => task.id !== taskId));
+    
+    // Recargar el historial después de eliminar una tarea
+    const updatedHistory = await StorageService.getTaskHistory();
+    setTaskHistory(updatedHistory);
     
     // Forzar actualización de vistas después de eliminar
     setForceUpdate(prev => prev + 1);
@@ -183,7 +190,41 @@ export const useTasks = () => {
     const result = await StorageService.cleanupExpiredTasks();
     // Recargar datos después de la limpieza manual
     await loadData();
+    
+    // Forzar actualización adicional para asegurar que el historial se actualice
+    setForceUpdate(prev => prev + 1);
+    
     return result;
+  };
+
+  // Funciones para estadísticas del historial
+  const getHistoricalStats = () => {
+    const now = new Date();
+    const lastMonth = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const last3Months = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+    const last6Months = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000);
+
+    const historicalTasks = taskHistory
+      .filter(item => item.task.createdAt >= last6Months)
+      .map(item => item.task);
+
+    const monthlyStats = historicalTasks.filter(task => 
+      task.createdAt >= lastMonth
+    );
+
+    const quarterlyStats = historicalTasks.filter(task => 
+      task.createdAt >= last3Months
+    );
+
+    return {
+      totalHistorical: historicalTasks.length,
+      completedHistorical: historicalTasks.filter(t => t.status === 'completed').length,
+      monthlyCompleted: monthlyStats.filter(t => t.status === 'completed').length,
+      quarterlyCompleted: quarterlyStats.filter(t => t.status === 'completed').length,
+      completionRate: historicalTasks.length > 0 
+        ? (historicalTasks.filter(t => t.status === 'completed').length / historicalTasks.length) * 100 
+        : 0,
+    };
   };
 
   const applyFilters = (taskList: Task[]) => {
@@ -278,6 +319,7 @@ export const useTasks = () => {
 
   return {
     tasks,
+    taskHistory,
     allTasks: tasks, // Alias para compatibilidad
     categories,
     urgencyLevels,
@@ -300,6 +342,7 @@ export const useTasks = () => {
     deleteUrgencyLevel,
     updateSettings,
     runManualCleanup,
+    getHistoricalStats,
     refreshData: loadData,
   };
 };

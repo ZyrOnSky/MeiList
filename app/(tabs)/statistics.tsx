@@ -33,6 +33,7 @@ const { width } = Dimensions.get('window');
 export default function StatisticsScreen() {
   const {
     allTasks,
+    taskHistory,
     categories,
     urgencyLevels,
     settings,
@@ -46,6 +47,7 @@ export default function StatisticsScreen() {
     deleteUrgencyLevel,
     updateSettings,
     runManualCleanup,
+    getHistoricalStats,
   } = useTaskContext();
 
   const [showCategoryManager, setShowCategoryManager] = useState(false);
@@ -56,6 +58,10 @@ export default function StatisticsScreen() {
   const tasks = allTasks || [];
   const categoriesList = categories || [];
   const urgencyLevelsList = urgencyLevels || [];
+  const history = taskHistory || [];
+
+  // Estadísticas del historial
+  const historicalStats = getHistoricalStats();
 
   const totalTasks = tasks.length;
   const completedTasks = tasks.filter(task => task.status === 'completed').length;
@@ -64,38 +70,84 @@ export default function StatisticsScreen() {
     task.status !== 'completed' && StorageService.isTaskOverdue(task)
   ).length;
 
+  // Estadísticas combinadas (activas + históricas)
+  const totalAllTime = totalTasks + historicalStats.totalHistorical;
+  const completedAllTime = completedTasks + historicalStats.completedHistorical;
   const completionRate = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+  const allTimeCompletionRate = totalAllTime > 0 ? (completedAllTime / totalAllTime) * 100 : 0;
   const overdueRate = totalTasks > 0 ? (overdueTasks / totalTasks) * 100 : 0;
 
-  // Estadísticas por categoría
+  // Estadísticas por categoría (incluyendo historial)
   const categoryStats = categoriesList.map(category => {
-    const categoryTasks = tasks.filter(task => task.categoryId === category.id);
-    const completedInCategory = categoryTasks.filter(task => task.status === 'completed').length;
-    const categoryCompletionRate = categoryTasks.length > 0 
-      ? (completedInCategory / categoryTasks.length) * 100 
-      : 0;
+    // Tareas activas de esta categoría
+    const activeCategoryTasks = tasks.filter(task => task.categoryId === category.id);
+    const activeCompletedInCategory = activeCategoryTasks.filter(task => task.status === 'completed').length;
     
-    return {
-      ...category,
-      totalTasks: categoryTasks.length,
-      completedTasks: completedInCategory,
-      completionRate: categoryCompletionRate,
+    // Tareas históricas de esta categoría
+    const historicalCategoryTasks = history
+      .filter(item => item.task.categoryId === category.id)
+      .map(item => item.task);
+    const historicalCompletedInCategory = historicalCategoryTasks.filter(task => task.status === 'completed').length;
+    
+    // Totales combinados
+    const totalCategoryTasks = activeCategoryTasks.length + historicalCategoryTasks.length;
+    const totalCompletedInCategory = activeCompletedInCategory + historicalCompletedInCategory;
+    
+    // Tasas de completación
+    const activeCompletionRate = activeCategoryTasks.length > 0 
+      ? (activeCompletedInCategory / activeCategoryTasks.length) * 100 
+      : 0;
+    const allTimeCompletionRate = totalCategoryTasks > 0 
+      ? (totalCompletedInCategory / totalCategoryTasks) * 100 
+      : 0;
+      
+      return {
+        ...category,
+      totalTasks: totalCategoryTasks,
+      activeTasks: activeCategoryTasks.length,
+      historicalTasks: historicalCategoryTasks.length,
+      completedTasks: totalCompletedInCategory,
+      activeCompletedTasks: activeCompletedInCategory,
+      historicalCompletedTasks: historicalCompletedInCategory,
+      completionRate: allTimeCompletionRate,
+      activeCompletionRate: activeCompletionRate,
     };
   }).filter(stat => stat.totalTasks > 0);
 
-  // Estadísticas por nivel de urgencia
+  // Estadísticas por nivel de urgencia (incluyendo historial)
   const urgencyStats = urgencyLevelsList.map(urgency => {
-    const urgencyTasks = tasks.filter(task => task.urgency === urgency.id);
-    const completedInUrgency = urgencyTasks.filter(task => task.status === 'completed').length;
-    const urgencyCompletionRate = urgencyTasks.length > 0 
-      ? (completedInUrgency / urgencyTasks.length) * 100 
-      : 0;
+    // Tareas activas de esta urgencia
+    const activeUrgencyTasks = tasks.filter(task => task.urgency === urgency.id);
+    const activeCompletedInUrgency = activeUrgencyTasks.filter(task => task.status === 'completed').length;
     
-    return {
+    // Tareas históricas de esta urgencia
+    const historicalUrgencyTasks = history
+      .filter(item => item.task.urgency === urgency.id)
+      .map(item => item.task);
+    const historicalCompletedInUrgency = historicalUrgencyTasks.filter(task => task.status === 'completed').length;
+    
+    // Totales combinados
+    const totalUrgencyTasks = activeUrgencyTasks.length + historicalUrgencyTasks.length;
+    const totalCompletedInUrgency = activeCompletedInUrgency + historicalCompletedInUrgency;
+    
+    // Tasas de completación
+    const activeCompletionRate = activeUrgencyTasks.length > 0 
+      ? (activeCompletedInUrgency / activeUrgencyTasks.length) * 100 
+      : 0;
+    const allTimeCompletionRate = totalUrgencyTasks > 0 
+      ? (totalCompletedInUrgency / totalUrgencyTasks) * 100 
+      : 0;
+      
+      return {
       ...urgency,
-      totalTasks: urgencyTasks.length,
-      completedTasks: completedInUrgency,
-      completionRate: urgencyCompletionRate,
+      totalTasks: totalUrgencyTasks,
+      activeTasks: activeUrgencyTasks.length,
+      historicalTasks: historicalUrgencyTasks.length,
+      completedTasks: totalCompletedInUrgency,
+      activeCompletedTasks: activeCompletedInUrgency,
+      historicalCompletedTasks: historicalCompletedInUrgency,
+      completionRate: allTimeCompletionRate,
+      activeCompletionRate: activeCompletionRate,
     };
   }).filter(stat => stat.totalTasks > 0);
 
@@ -208,7 +260,7 @@ export default function StatisticsScreen() {
           <View style={styles.progressIcon}>
             <Target size={20} color="#8B5CF6" />
           </View>
-          <Text style={styles.progressTitle}>Tasa de Completación</Text>
+          <Text style={styles.progressTitle}>Tasa de Completación (Actual)</Text>
         </View>
         <View style={styles.progressBar}>
           <View 
@@ -221,6 +273,26 @@ export default function StatisticsScreen() {
         <Text style={styles.progressText}>{completionRate.toFixed(1)}%</Text>
       </View>
 
+      {historicalStats.totalHistorical > 0 && (
+        <View style={styles.progressCard}>
+          <View style={styles.progressHeader}>
+            <View style={styles.progressIcon}>
+              <Award size={20} color="#F59E0B" />
+            </View>
+            <Text style={styles.progressTitle}>Tasa de Completación (Histórica)</Text>
+          </View>
+          <View style={styles.progressBar}>
+            <View 
+              style={[
+                styles.progressFill, 
+                { width: `${allTimeCompletionRate}%`, backgroundColor: '#F59E0B' }
+              ]} 
+            />
+          </View>
+          <Text style={styles.progressText}>{allTimeCompletionRate.toFixed(1)}%</Text>
+        </View>
+      )}
+
       {overdueTasks > 0 && (
         <View style={styles.progressCard}>
           <View style={styles.progressHeader}>
@@ -229,13 +301,13 @@ export default function StatisticsScreen() {
             </View>
             <Text style={styles.progressTitle}>Tareas Vencidas</Text>
           </View>
-          <View style={styles.progressBar}>
-            <View 
-              style={[
-                styles.progressFill, 
+    <View style={styles.progressBar}>
+      <View 
+        style={[
+          styles.progressFill, 
                 { width: `${overdueRate}%`, backgroundColor: '#EF4444' }
-              ]} 
-            />
+        ]} 
+      />
           </View>
           <Text style={styles.progressText}>{overdueRate.toFixed(1)}%</Text>
         </View>
@@ -251,10 +323,17 @@ export default function StatisticsScreen() {
           <View style={styles.categoryHeader}>
             <View style={[styles.categoryColor, { backgroundColor: stat.color }]} />
             <Text style={styles.categoryName}>{stat.name}</Text>
-            <Text style={styles.categoryCount}>
-              {stat.completedTasks}/{stat.totalTasks}
-            </Text>
-          </View>
+            <View style={styles.categoryCountContainer}>
+              <Text style={styles.categoryCount}>
+                {stat.completedTasks}/{stat.totalTasks}
+              </Text>
+              {stat.historicalTasks > 0 && (
+                <Text style={styles.categoryHistoricalCount}>
+                  +{stat.historicalTasks} históricas
+          </Text>
+              )}
+        </View>
+      </View>
           <View style={styles.categoryProgressBar}>
             <View 
               style={[
@@ -266,10 +345,17 @@ export default function StatisticsScreen() {
               ]} 
             />
           </View>
-          <Text style={styles.categoryRate}>{stat.completionRate.toFixed(0)}%</Text>
+          <View style={styles.categoryRateContainer}>
+            <Text style={styles.categoryRate}>{stat.completionRate.toFixed(0)}%</Text>
+            {stat.historicalTasks > 0 && stat.activeTasks > 0 && (
+              <Text style={styles.categoryActiveRate}>
+                ({stat.activeCompletionRate.toFixed(0)}% actual)
+              </Text>
+            )}
+          </View>
         </View>
       ))}
-    </View>
+                  </View>
   );
 
   const renderUrgencyStats = () => (
@@ -280,9 +366,16 @@ export default function StatisticsScreen() {
           <View style={styles.urgencyHeader}>
             <View style={[styles.urgencyColor, { backgroundColor: stat.color }]} />
             <Text style={styles.urgencyName}>{stat.name}</Text>
-            <Text style={styles.urgencyCount}>
-              {stat.completedTasks}/{stat.totalTasks}
-            </Text>
+            <View style={styles.urgencyCountContainer}>
+              <Text style={styles.urgencyCount}>
+                {stat.completedTasks}/{stat.totalTasks}
+                  </Text>
+              {stat.historicalTasks > 0 && (
+                <Text style={styles.urgencyHistoricalCount}>
+                  +{stat.historicalTasks} históricas
+                </Text>
+              )}
+            </View>
           </View>
           <View style={styles.urgencyProgressBar}>
             <View 
@@ -295,9 +388,65 @@ export default function StatisticsScreen() {
               ]} 
             />
           </View>
-          <Text style={styles.urgencyRate}>{stat.completionRate.toFixed(0)}%</Text>
+          <View style={styles.urgencyRateContainer}>
+            <Text style={styles.urgencyRate}>{stat.completionRate.toFixed(0)}%</Text>
+            {stat.historicalTasks > 0 && stat.activeTasks > 0 && (
+              <Text style={styles.urgencyActiveRate}>
+                ({stat.activeCompletionRate.toFixed(0)}% actual)
+              </Text>
+            )}
+          </View>
+              </View>
+            ))}
+    </View>
+  );
+
+  const renderHistoricalStats = () => (
+    <View style={styles.historicalSection}>
+      <Text style={styles.sectionTitle}>Historial de Productividad</Text>
+      
+      <View style={styles.historicalCards}>
+        <View style={styles.historicalCard}>
+          <View style={styles.historicalIcon}>
+            <Award size={20} color="#F59E0B" />
+          </View>
+          <Text style={styles.historicalNumber}>{historicalStats.totalHistorical}</Text>
+          <Text style={styles.historicalLabel}>Total Histórico</Text>
         </View>
-      ))}
+
+        <View style={styles.historicalCard}>
+          <View style={styles.historicalIcon}>
+            <CheckCircle size={20} color="#10B981" />
+                </View>
+          <Text style={styles.historicalNumber}>{historicalStats.completedHistorical}</Text>
+          <Text style={styles.historicalLabel}>Completadas</Text>
+              </View>
+
+        <View style={styles.historicalCard}>
+          <View style={styles.historicalIcon}>
+            <Calendar size={20} color="#3B82F6" />
+          </View>
+          <Text style={styles.historicalNumber}>{historicalStats.monthlyCompleted}</Text>
+          <Text style={styles.historicalLabel}>Este Mes</Text>
+        </View>
+
+        <View style={styles.historicalCard}>
+          <View style={styles.historicalIcon}>
+            <TrendingUp size={20} color="#8B5CF6" />
+          </View>
+          <Text style={styles.historicalNumber}>{historicalStats.completionRate.toFixed(1)}%</Text>
+          <Text style={styles.historicalLabel}>Tasa de Éxito</Text>
+        </View>
+      </View>
+
+      {historicalStats.totalHistorical > 0 && (
+        <View style={styles.historicalInfo}>
+          <Text style={styles.historicalInfoText}>
+            📊 El historial mantiene un registro de {historicalStats.totalHistorical} tareas para 
+            alimentar las estadísticas a largo plazo y mantener las listas limpias.
+                </Text>
+              </View>
+      )}
     </View>
   );
 
@@ -314,9 +463,9 @@ export default function StatisticsScreen() {
               <Text style={styles.recentTitle}>{task.title}</Text>
               <Text style={styles.recentDate}>
                 Completada el {task.completedDate?.toLocaleDateString('es-ES')}
-              </Text>
+                </Text>
+              </View>
             </View>
-          </View>
         ))
       ) : (
         <View style={styles.emptyRecent}>
@@ -355,10 +504,11 @@ export default function StatisticsScreen() {
         {renderHeader()}
         {renderOverviewCards()}
         {renderProgressSection()}
+        {historicalStats.totalHistorical > 0 && renderHistoricalStats()}
         {categoryStats.length > 0 && renderCategoryStats()}
         {urgencyStats.length > 0 && renderUrgencyStats()}
         {renderRecentActivity()}
-      </ScrollView>
+    </ScrollView>
 
       <CategoryManagerModal
         visible={showCategoryManager}
@@ -587,6 +737,15 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Medium',
     color: '#6B7280',
   },
+  categoryCountContainer: {
+    alignItems: 'flex-end',
+  },
+  categoryHistoricalCount: {
+    fontSize: 10,
+    fontFamily: 'Inter-Regular',
+    color: '#9CA3AF',
+    fontStyle: 'italic',
+  },
   categoryProgressBar: {
     height: 6,
     backgroundColor: '#F3F4F6',
@@ -603,6 +762,17 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Bold',
     color: '#1F2937',
     textAlign: 'right',
+  },
+  categoryRateContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  categoryActiveRate: {
+    fontSize: 10,
+    fontFamily: 'Inter-Regular',
+    color: '#6B7280',
+    fontStyle: 'italic',
   },
   urgencySection: {
     paddingHorizontal: 20,
@@ -641,6 +811,15 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Medium',
     color: '#6B7280',
   },
+  urgencyCountContainer: {
+    alignItems: 'flex-end',
+  },
+  urgencyHistoricalCount: {
+    fontSize: 10,
+    fontFamily: 'Inter-Regular',
+    color: '#9CA3AF',
+    fontStyle: 'italic',
+  },
   urgencyProgressBar: {
     height: 6,
     backgroundColor: '#F3F4F6',
@@ -657,6 +836,17 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Bold',
     color: '#1F2937',
     textAlign: 'right',
+  },
+  urgencyRateContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  urgencyActiveRate: {
+    fontSize: 10,
+    fontFamily: 'Inter-Regular',
+    color: '#6B7280',
+    fontStyle: 'italic',
   },
   recentSection: {
     paddingHorizontal: 20,
@@ -719,5 +909,56 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Inter-Medium',
     color: '#6B7280',
+  },
+  historicalSection: {
+    paddingHorizontal: 20,
+    marginBottom: 24,
+  },
+  historicalCards: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  historicalCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    width: (width - 60) / 2,
+    marginBottom: 12,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  historicalIcon: {
+    marginBottom: 8,
+  },
+  historicalNumber: {
+    fontSize: 20,
+    fontFamily: 'Inter-Bold',
+    color: '#1F2937',
+    marginBottom: 4,
+  },
+  historicalLabel: {
+    fontSize: 12,
+    fontFamily: 'Inter-Medium',
+    color: '#6B7280',
+    textAlign: 'center',
+  },
+  historicalInfo: {
+    backgroundColor: '#FEF3C7',
+    borderRadius: 12,
+    padding: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: '#F59E0B',
+  },
+  historicalInfoText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    color: '#92400E',
+    lineHeight: 20,
   },
 });

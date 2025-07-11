@@ -17,7 +17,12 @@ interface SettingsModalProps {
   onClose: () => void;
   settings: AppSettings | null;
   onUpdateSettings: (settings: AppSettings) => void;
-  onManualCleanup: () => Promise<{ expiredCount: number; overdueCount: number; overdueExpiredCount: number }>;
+  onManualCleanup: () => Promise<{ 
+    completedMovedToHistory: number; 
+    overdueMovedToHistory: number; 
+    historyCleaned: number;
+    overdueMarked: number;
+  }>;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -31,26 +36,34 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   if (!settings) return null;
 
-  const handleExpirationChange = (value: number) => {
+  const handleCompletedRetentionChange = (value: number) => {
     const newSettings: AppSettings = {
       ...settings,
-      completedTaskExpirationDays: value,
+      completedTaskRetentionDays: value,
     };
     onUpdateSettings(newSettings);
   };
 
-  const handleOverdueExpirationChange = (value: number) => {
+  const handleOverdueRetentionChange = (value: number) => {
     const newSettings: AppSettings = {
       ...settings,
-      overdueTaskExpirationDays: value,
+      overdueTaskRetentionDays: value,
     };
     onUpdateSettings(newSettings);
   };
 
-  const handleRetentionChange = (value: number) => {
+  const handleHistoryRetentionChange = (value: number) => {
     const newSettings: AppSettings = {
       ...settings,
       historyRetentionMonths: value,
+    };
+    onUpdateSettings(newSettings);
+  };
+
+  const handleHistoryCleanupFrequencyChange = (value: number) => {
+    const newSettings: AppSettings = {
+      ...settings,
+      historyCleanupFrequencyDays: value,
     };
     onUpdateSettings(newSettings);
   };
@@ -66,7 +79,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const handleManualCleanup = async () => {
     Alert.alert(
       'Limpieza Manual',
-      '¿Estás seguro de que quieres ejecutar la limpieza manual ahora?\n\nEsto eliminará las tareas completadas que hayan expirado según tu configuración.',
+      '¿Estás seguro de que quieres ejecutar la limpieza manual ahora?\n\nEsto moverá las tareas expiradas al historial según tu configuración.',
       [
         {
           text: 'Cancelar',
@@ -81,7 +94,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               const result = await onManualCleanup();
               Alert.alert(
                 'Limpieza Completada',
-                `Se han procesado:\n• ${result.expiredCount} tareas completadas eliminadas\n• ${result.overdueCount} tareas marcadas como vencidas\n• ${result.overdueExpiredCount} tareas vencidas eliminadas`,
+                `Se han procesado:\n• ${result.completedMovedToHistory} tareas completadas movidas al historial\n• ${result.overdueMovedToHistory} tareas vencidas movidas al historial\n• ${result.overdueMarked} tareas marcadas como vencidas\n• ${result.historyCleaned} elementos limpiados del historial`,
                 [{ text: 'OK' }]
               );
             } catch (error) {
@@ -122,30 +135,31 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     return `${days} días`;
   };
 
-  const renderExpirationSection = () => (
+  const renderCompletedRetentionSection = () => (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
-        <Clock size={20} color="#8B5CF6" />
-        <Text style={styles.sectionTitle}>Expiración de Tareas Completadas</Text>
+        <Clock size={20} color="#10B981" />
+        <Text style={styles.sectionTitle}>Retención de Tareas Completadas</Text>
       </View>
       
       <Text style={styles.sectionDescription}>
-        Las tareas completadas se eliminarán automáticamente después del tiempo especificado
+        Las tareas completadas se moverán automáticamente al historial después del tiempo especificado. 
+        Esto mantiene tus listas limpias y enfocadas en tareas pendientes.
       </Text>
 
       <View style={styles.optionsContainer}>
-        {[0, 7, 30, 90, 180, 365].map((days) => (
+        {[1, 3, 7, 14, 30, 90].map((days) => (
           <TouchableOpacity
             key={days}
             style={[
               styles.option,
-              settings.completedTaskExpirationDays === days && styles.selectedOption,
+              settings.completedTaskRetentionDays === days && styles.selectedOption,
             ]}
-            onPress={() => handleExpirationChange(days)}
+            onPress={() => handleCompletedRetentionChange(days)}
           >
             <Text style={[
               styles.optionText,
-              settings.completedTaskExpirationDays === days && styles.selectedOptionText,
+              settings.completedTaskRetentionDays === days && styles.selectedOptionText,
             ]}>
               {getExpirationText(days)}
             </Text>
@@ -155,30 +169,31 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     </View>
   );
 
-  const renderOverdueExpirationSection = () => (
+  const renderOverdueRetentionSection = () => (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
         <AlertTriangle size={20} color="#EF4444" />
-        <Text style={styles.sectionTitle}>Expiración de Tareas Vencidas</Text>
+        <Text style={styles.sectionTitle}>Retención de Tareas Vencidas</Text>
       </View>
       
       <Text style={styles.sectionDescription}>
-        Las tareas vencidas se eliminarán automáticamente después del tiempo especificado
+        Las tareas vencidas se moverán automáticamente al historial después del tiempo especificado. 
+        Esto evita que las listas se llenen de tareas antiguas no completadas.
       </Text>
 
       <View style={styles.optionsContainer}>
-        {[0, 30, 60, 90, 180, 365].map((days) => (
+        {[1, 3, 7, 14, 30, 60].map((days) => (
           <TouchableOpacity
             key={days}
             style={[
               styles.option,
-              settings.overdueTaskExpirationDays === days && styles.selectedOption,
+              settings.overdueTaskRetentionDays === days && styles.selectedOption,
             ]}
-            onPress={() => handleOverdueExpirationChange(days)}
+            onPress={() => handleOverdueRetentionChange(days)}
           >
             <Text style={[
               styles.optionText,
-              settings.overdueTaskExpirationDays === days && styles.selectedOptionText,
+              settings.overdueTaskRetentionDays === days && styles.selectedOptionText,
             ]}>
               {getExpirationText(days)}
             </Text>
@@ -188,26 +203,27 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     </View>
   );
 
-  const renderRetentionSection = () => (
+  const renderHistoryRetentionSection = () => (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
-        <Trash2 size={20} color="#EF4444" />
+        <Trash2 size={20} color="#6B7280" />
         <Text style={styles.sectionTitle}>Retención de Historial</Text>
       </View>
       
       <Text style={styles.sectionDescription}>
-        Las tareas eliminadas se conservarán en el historial durante este tiempo
+        Las tareas eliminadas se conservarán en el historial durante este tiempo para alimentar las estadísticas. 
+        Después se eliminarán permanentemente para liberar espacio.
       </Text>
 
       <View style={styles.optionsContainer}>
-        {[0, 1, 3, 6, 12, 24].map((months) => (
+        {[1, 3, 6, 12, 24, 36].map((months) => (
           <TouchableOpacity
             key={months}
             style={[
               styles.option,
               settings.historyRetentionMonths === months && styles.selectedOption,
             ]}
-            onPress={() => handleRetentionChange(months)}
+            onPress={() => handleHistoryRetentionChange(months)}
           >
             <Text style={[
               styles.optionText,
@@ -221,15 +237,50 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     </View>
   );
 
+  const renderHistoryCleanupFrequencySection = () => (
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <Clock size={20} color="#6B7280" />
+        <Text style={styles.sectionTitle}>Limpieza del Historial</Text>
+      </View>
+      
+      <Text style={styles.sectionDescription}>
+        Con qué frecuencia se eliminarán permanentemente los elementos del historial que han expirado. 
+        Esto libera espacio y mantiene solo los datos relevantes para las estadísticas.
+      </Text>
+
+      <View style={styles.optionsContainer}>
+        {[7, 15, 30, 60, 90].map((days) => (
+          <TouchableOpacity
+            key={days}
+            style={[
+              styles.option,
+              settings.historyCleanupFrequencyDays === days && styles.selectedOption,
+            ]}
+            onPress={() => handleHistoryCleanupFrequencyChange(days)}
+          >
+            <Text style={[
+              styles.optionText,
+              settings.historyCleanupFrequencyDays === days && styles.selectedOptionText,
+            ]}>
+              {getFrequencyText(days)}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
+  );
+
   const renderFrequencySection = () => (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
         <Clock size={20} color="#10B981" />
-        <Text style={styles.sectionTitle}>Frecuencia de Limpieza</Text>
+        <Text style={styles.sectionTitle}>Limpieza Automática</Text>
       </View>
       
       <Text style={styles.sectionDescription}>
-        Con qué frecuencia se ejecutará la limpieza automática
+        Define cuándo la app moverá automáticamente las tareas expiradas al historial. 
+        Esto mantiene tus listas limpias sin que tengas que hacerlo manualmente.
       </Text>
 
       <View style={styles.optionsContainer}>
@@ -251,6 +302,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </TouchableOpacity>
         ))}
       </View>
+      
+      <View style={styles.frequencyInfo}>
+        <Text style={styles.frequencyInfoText}>
+          💡 <Text style={styles.frequencyInfoBold}>Manual:</Text> Solo limpieza cuando presiones el botón
+        </Text>
+        <Text style={styles.frequencyInfoText}>
+          💡 <Text style={styles.frequencyInfoBold}>Automática:</Text> La app limpia según tu configuración de retención
+        </Text>
+      </View>
     </View>
   );
 
@@ -269,8 +329,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       </View>
       
       <View style={styles.infoItem}>
+        <Text style={styles.infoLabel}>• Tareas completadas:</Text>
+        <Text style={styles.infoText}>Se mueven al historial automáticamente</Text>
+      </View>
+      
+      <View style={styles.infoItem}>
         <Text style={styles.infoLabel}>• Tareas vencidas:</Text>
-        <Text style={styles.infoText}>Se marcan y eliminan automáticamente</Text>
+        <Text style={styles.infoText}>Se marcan y mueven al historial automáticamente</Text>
+      </View>
+      
+      <View style={styles.infoItem}>
+        <Text style={styles.infoLabel}>• Historial:</Text>
+        <Text style={styles.infoText}>Mantiene estadísticas a largo plazo</Text>
       </View>
       
       <View style={styles.infoItem}>
@@ -301,9 +371,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         </View>
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {renderExpirationSection()}
-          {renderOverdueExpirationSection()}
-          {renderRetentionSection()}
+          {renderCompletedRetentionSection()}
+          {renderOverdueRetentionSection()}
+          {renderHistoryRetentionSection()}
+          {renderHistoryCleanupFrequencySection()}
           {renderFrequencySection()}
           {renderInfoSection()}
 
@@ -465,5 +536,23 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-SemiBold',
     color: '#FFFFFF',
     marginLeft: 8,
+  },
+  frequencyInfo: {
+    marginTop: 16,
+    padding: 12,
+    backgroundColor: '#F0F9FF',
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#0EA5E9',
+  },
+  frequencyInfoText: {
+    fontSize: 13,
+    fontFamily: 'Inter-Regular',
+    color: '#0C4A6E',
+    lineHeight: 18,
+    marginBottom: 4,
+  },
+  frequencyInfoBold: {
+    fontFamily: 'Inter-SemiBold',
   },
 }); 

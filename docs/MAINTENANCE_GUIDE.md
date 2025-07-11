@@ -593,3 +593,50 @@ npx expo build:production
 ---
 
 *Esta guía debe mantenerse actualizada con cada nueva versión de la aplicación.* 
+
+---
+
+## 🆕 Cambios y Mantenimiento Reciente (2024)
+
+- **Organización de carpetas:** Se crearon `scripts/` y `docs/` para scripts y documentación, manteniendo la raíz limpia y profesional.
+- **Icono de la app:** Ahora es de alta resolución (`assets/images/icon.png`, 751x751 px) y está correctamente configurado en `app.json` y `public/manifest.json` para que la app instalada desde el navegador o como PWA muestre un ícono nítido y profesional. El favicon solo se usa para la pestaña del navegador.
+- **Historial y estadísticas:** El historial de tareas eliminadas alimenta las estadísticas de categorías y urgencias. Las gráficas y contadores muestran datos combinados (tareas activas + históricas) y diferencian entre rendimiento actual e histórico.
+- **Configuración avanzada:** Las secciones de configuración ahora tienen descripciones claras sobre limpieza automática, retención de tareas completadas, vencidas e historial, y limpieza del historial. Se añadió una caja informativa para explicar la limpieza automática.
+- **Estructura de carpetas recomendada:**
+
+```plaintext
+MeiList/
+  app.json
+  eas.json
+  package.json
+  tsconfig.json
+  README.md
+  LICENSE
+  public/
+    manifest.json
+  assets/
+    images/
+      icon.png
+      favicon.png
+      splash.png
+  scripts/
+    show-color-palette.js
+    verify-categories-sync.js
+    test-form-persistence.js
+    test-categories.js
+    reset-categories.js
+    debug-categories.js
+    check-ios-setup.js
+  docs/
+    BOLT_DEPLOY.md
+    MAINTENANCE_GUIDE.md
+    IOS_SETUP_GUIDE.md
+    DATE_MANAGEMENT_GUIDE.md
+    COLOR_PALETTE.md
+    CATEGORIES_FIX.md
+```
+
+- **Buenas prácticas:**
+  - No dejar scripts ni documentación sueltos en la raíz.
+  - Mantener los íconos de la app en alta resolución y correctamente referenciados.
+  - Actualizar el `manifest.json` y limpiar caché tras cambios en íconos o configuración PWA. 

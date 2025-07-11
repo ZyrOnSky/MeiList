@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import { Platform, TouchableOpacity, Text, View } from 'react-native';
-import { List, Clock, CircleCheck as CheckCircle, ChartBar as BarChart3 } from 'lucide-react-native';
+import { List, Clock, CircleCheck as CheckCircle, ChartBar as BarChart3, Archive } from 'lucide-react-native';
 import React, { useState } from 'react';
 
 // Componente para icono con tooltip
@@ -179,6 +179,21 @@ export default function TabLayout() {
               size={size} 
               color={color} 
               title="Estadísticas"
+              isActive={focused}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="history"
+        options={{
+          title: 'Historial',
+          tabBarIcon: ({ size, color, focused }) => (
+            <TabIconWithTooltip 
+              icon={Archive} 
+              size={size} 
+              color={color} 
+              title="Historial"
               isActive={focused}
             />
           ),

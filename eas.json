@@ -31,5 +31,12 @@
         "appleTeamId": "your-apple-team-id"
       }
     }
+  },
+  "expo": {
+    "name": "MeiList",
+    "icon": "./assets/images/icon.png",
+    "web": {
+      "favicon": "./assets/images/favicon.png"
+    }
   }
 } 

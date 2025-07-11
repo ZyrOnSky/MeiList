@@ -1,12 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Task, Category, AppSettings, UrgencyLevel } from '@/types/Task';
+import { Task, Category, AppSettings, UrgencyLevel, TaskHistory } from '@/types/Task';
 
 const STORAGE_KEYS = {
   TASKS: 'tasks',
   CATEGORIES: 'categories',
   URGENCY_LEVELS: 'urgencyLevels',
   SETTINGS: 'settings',
-  EXPIRED_TASKS: 'expiredTasks',
+  TASK_HISTORY: 'taskHistory',
 };
 
 // Función de logging mejorada para web
@@ -89,13 +89,21 @@ export class StorageService {
     }
   }
 
-  static async deleteTask(taskId: string): Promise<void> {
+  static async deleteTask(taskId: string, reason: 'manual_deletion' = 'manual_deletion'): Promise<void> {
     try {
-      logStorage('deleteTask - eliminando', taskId);
+      logStorage('deleteTask - moviendo al historial', taskId);
       const tasks = await this.getTasks();
-      const filteredTasks = tasks.filter(t => t.id !== taskId);
-      await this.saveTasks(filteredTasks);
-      logStorage('deleteTask - tarea eliminada');
+      const taskToDelete = tasks.find(t => t.id === taskId);
+      
+      if (taskToDelete) {
+        // Mover al historial
+        await this.addToHistory(taskToDelete, reason);
+        
+        // Eliminar de la lista activa
+        const filteredTasks = tasks.filter(t => t.id !== taskId);
+        await this.saveTasks(filteredTasks);
+        logStorage('deleteTask - tarea movida al historial');
+      }
     } catch (error) {
       console.error('❌ Error deleting task:', error);
       logStorage('deleteTask - error', error);
@@ -347,49 +355,86 @@ export class StorageService {
   static getDefaultSettings(): AppSettings {
     logStorage('getDefaultSettings - retornando configuración por defecto');
     return {
-      completedTaskExpirationDays: 30,
-      overdueTaskExpirationDays: 90,
-      historyRetentionMonths: 3,
-      cleanupFrequencyDays: 7,
+      // Retención de tareas activas (más corta para mantener listas limpias)
+      completedTaskRetentionDays: 7, // 7 días para tareas completadas
+      overdueTaskRetentionDays: 3, // 3 días para tareas vencidas
+      
+      // Historial (más largo para estadísticas)
+      historyRetentionMonths: 6, // 6 meses en historial
+      historyCleanupFrequencyDays: 30, // Limpiar historial cada 30 días
+      
+      // Limpieza general
+      cleanupFrequencyDays: 1, // Limpiar diariamente
       lastCleanup: new Date(),
+      lastHistoryCleanup: new Date(),
     };
   }
 
-  // Expired Tasks
-  static async getExpiredTasks(): Promise<Task[]> {
+
+
+  // Task History
+  static async getTaskHistory(): Promise<TaskHistory[]> {
     try {
-      logStorage('getExpiredTasks - iniciando');
-      const data = await AsyncStorage.getItem(STORAGE_KEYS.EXPIRED_TASKS);
+      logStorage('getTaskHistory - iniciando');
+      const data = await AsyncStorage.getItem(STORAGE_KEYS.TASK_HISTORY);
       if (data) {
-        const tasks = JSON.parse(data);
-        const parsedTasks = tasks.map((task: any) => ({
-          ...task,
-          createdAt: new Date(task.createdAt),
-          updatedAt: new Date(task.updatedAt),
-          startDate: task.startDate ? new Date(task.startDate) : undefined,
-          dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
-          completedDate: task.completedDate ? new Date(task.completedDate) : undefined,
+        const history = JSON.parse(data);
+        const parsedHistory = history.map((item: any) => ({
+          ...item,
+          task: {
+            ...item.task,
+            createdAt: new Date(item.task.createdAt),
+            updatedAt: new Date(item.task.updatedAt),
+            startDate: item.task.startDate ? new Date(item.task.startDate) : undefined,
+            dueDate: item.task.dueDate ? new Date(item.task.dueDate) : undefined,
+            completedDate: item.task.completedDate ? new Date(item.task.completedDate) : undefined,
+          },
+          deletedAt: new Date(item.deletedAt),
+          retentionUntil: new Date(item.retentionUntil),
         }));
-        logStorage('getExpiredTasks - tareas expiradas obtenidas', parsedTasks.length);
-        return parsedTasks;
+        logStorage('getTaskHistory - historial obtenido', parsedHistory.length);
+        return parsedHistory;
       }
-      logStorage('getExpiredTasks - sin tareas expiradas');
+      logStorage('getTaskHistory - sin historial');
       return [];
     } catch (error) {
-      console.error('❌ Error getting expired tasks:', error);
-      logStorage('getExpiredTasks - error', error);
+      console.error('❌ Error getting task history:', error);
+      logStorage('getTaskHistory - error', error);
       return [];
     }
   }
 
-  static async saveExpiredTasks(tasks: Task[]): Promise<void> {
+  static async saveTaskHistory(history: TaskHistory[]): Promise<void> {
     try {
-      logStorage('saveExpiredTasks - guardando', tasks.length);
-      await AsyncStorage.setItem(STORAGE_KEYS.EXPIRED_TASKS, JSON.stringify(tasks));
-      logStorage('saveExpiredTasks - guardado exitoso');
+      logStorage('saveTaskHistory - guardando', history.length);
+      await AsyncStorage.setItem(STORAGE_KEYS.TASK_HISTORY, JSON.stringify(history));
+      logStorage('saveTaskHistory - guardado exitoso');
     } catch (error) {
-      console.error('❌ Error saving expired tasks:', error);
-      logStorage('saveExpiredTasks - error', error);
+      console.error('❌ Error saving task history:', error);
+      logStorage('saveTaskHistory - error', error);
+    }
+  }
+
+  static async addToHistory(task: Task, reason: TaskHistory['deletionReason']): Promise<void> {
+    try {
+      logStorage('addToHistory - añadiendo al historial', { taskId: task.id, reason });
+      const history = await this.getTaskHistory();
+      const settings = await this.getSettings();
+      
+      const historyItem: TaskHistory = {
+        id: `${task.id}_${Date.now()}`,
+        task,
+        deletedAt: new Date(),
+        deletionReason: reason,
+        retentionUntil: new Date(Date.now() + (settings.historyRetentionMonths * 30 * 24 * 60 * 60 * 1000)),
+      };
+      
+      history.push(historyItem);
+      await this.saveTaskHistory(history);
+      logStorage('addToHistory - añadido al historial exitosamente');
+    } catch (error) {
+      console.error('❌ Error adding to history:', error);
+      logStorage('addToHistory - error', error);
     }
   }
 
@@ -425,17 +470,21 @@ export class StorageService {
   }
 
   // Cleanup methods
-  static async cleanupExpiredTasks(): Promise<{ expiredCount: number; overdueCount: number; overdueExpiredCount: number }> {
+  static async cleanupExpiredTasks(): Promise<{ 
+    completedMovedToHistory: number; 
+    overdueMovedToHistory: number; 
+    historyCleaned: number;
+    overdueMarked: number;
+  }> {
     try {
       logStorage('cleanupExpiredTasks - iniciando limpieza');
       
       const tasks = await this.getTasks();
       const settings = await this.getSettings();
-      const expiredTasks = await this.getExpiredTasks();
       
-      let expiredCount = 0;
-      let overdueCount = 0;
-      let overdueExpiredCount = 0;
+      let completedMovedToHistory = 0;
+      let overdueMovedToHistory = 0;
+      let overdueMarked = 0;
       
       const now = new Date();
       const activeTasks: Task[] = [];
@@ -444,25 +493,25 @@ export class StorageService {
         // Marcar tareas vencidas
         if (task.status === 'pending' && this.isTaskOverdue(task)) {
           task.status = 'overdue';
-          overdueCount++;
+          overdueMarked++;
         }
         
         // Mover tareas completadas expiradas al historial
         if (task.status === 'completed' && task.completedDate) {
           const daysSinceCompleted = Math.floor((now.getTime() - task.completedDate.getTime()) / (1000 * 60 * 60 * 24));
-          if (daysSinceCompleted >= settings.completedTaskExpirationDays) {
-            expiredTasks.push(task);
-            expiredCount++;
+          if (daysSinceCompleted >= settings.completedTaskRetentionDays) {
+            await this.addToHistory(task, 'completed_expired');
+            completedMovedToHistory++;
             continue;
           }
         }
         
         // Mover tareas vencidas expiradas al historial
-        if (task.status === 'overdue') {
-          const daysSinceOverdue = Math.floor((now.getTime() - task.dueDate!.getTime()) / (1000 * 60 * 60 * 24));
-          if (daysSinceOverdue >= settings.overdueTaskExpirationDays) {
-            expiredTasks.push(task);
-            overdueExpiredCount++;
+        if (task.status === 'overdue' && task.dueDate) {
+          const daysSinceOverdue = Math.floor((now.getTime() - task.dueDate.getTime()) / (1000 * 60 * 60 * 24));
+          if (daysSinceOverdue >= settings.overdueTaskRetentionDays) {
+            await this.addToHistory(task, 'overdue_expired');
+            overdueMovedToHistory++;
             continue;
           }
         }
@@ -470,18 +519,55 @@ export class StorageService {
         activeTasks.push(task);
       }
       
+      // Limpiar historial expirado
+      const historyCleaned = await this.cleanupHistory();
+      
       // Guardar cambios
       await this.saveTasks(activeTasks);
-      await this.saveExpiredTasks(expiredTasks);
       await this.saveSettings({ ...settings, lastCleanup: now });
       
-      logStorage('cleanupExpiredTasks - limpieza completada', { expiredCount, overdueCount, overdueExpiredCount });
+      logStorage('cleanupExpiredTasks - limpieza completada', { 
+        completedMovedToHistory, 
+        overdueMovedToHistory, 
+        historyCleaned,
+        overdueMarked 
+      });
       
-      return { expiredCount, overdueCount, overdueExpiredCount };
+      return { 
+        completedMovedToHistory, 
+        overdueMovedToHistory, 
+        historyCleaned,
+        overdueMarked 
+      };
     } catch (error) {
       console.error('❌ Error during cleanup:', error);
       logStorage('cleanupExpiredTasks - error', error);
-      return { expiredCount: 0, overdueCount: 0, overdueExpiredCount: 0 };
+      return { 
+        completedMovedToHistory: 0, 
+        overdueMovedToHistory: 0, 
+        historyCleaned: 0,
+        overdueMarked: 0 
+      };
+    }
+  }
+
+  static async cleanupHistory(): Promise<number> {
+    try {
+      logStorage('cleanupHistory - iniciando limpieza del historial');
+      const history = await this.getTaskHistory();
+      const now = new Date();
+      
+      const validHistory = history.filter(item => item.retentionUntil > now);
+      const cleanedCount = history.length - validHistory.length;
+      
+      await this.saveTaskHistory(validHistory);
+      logStorage('cleanupHistory - limpieza completada', { cleanedCount });
+      
+      return cleanedCount;
+    } catch (error) {
+      console.error('❌ Error cleaning history:', error);
+      logStorage('cleanupHistory - error', error);
+      return 0;
     }
   }
 
