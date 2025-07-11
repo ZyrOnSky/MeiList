@@ -1,5 +1,4 @@
 import React from 'react';
-import splashImage from '../assets/images/splash.png';
 
 const SplashScreen: React.FC = () => (
   <div
@@ -17,7 +16,7 @@ const SplashScreen: React.FC = () => (
     }}
   >
     <img
-      src={splashImage}
+      src="/assets/images/splash.png"
       alt="Splash MeiList"
       style={{
         maxWidth: '80vw',
