@@ -14,6 +14,7 @@ export const useTasks = () => {
   const [urgencyLevels, setUrgencyLevels] = useState<UrgencyLevel[]>([]);
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [loading, setLoading] = useState(true);
+  const [forceUpdate, setForceUpdate] = useState(0); // Forzar actualización de vistas
   const [filters, setFilters] = useState<TaskFilters>({
     categories: [],
     urgency: [],
@@ -83,6 +84,9 @@ export const useTasks = () => {
     
     await StorageService.addTask(newTask);
     setTasks(prev => [...prev, newTask]);
+    
+    // Forzar actualización de vistas después de añadir tarea
+    setForceUpdate(prev => prev + 1);
   };
 
   const updateTask = async (taskId: string, updates: Partial<Task>) => {
@@ -95,6 +99,11 @@ export const useTasks = () => {
       console.log('Updated tasks state:', updatedTasks.length, 'tasks');
       return updatedTasks;
     });
+    
+    // Forzar actualización de vistas después de cambiar estado
+    if (updates.status) {
+      setForceUpdate(prev => prev + 1);
+    }
   };
 
   const deleteTask = async (taskId: string) => {
@@ -231,18 +240,18 @@ export const useTasks = () => {
   // Computed values - recalculados cada vez que cambian las tareas
   const activeTasks = React.useMemo(() => 
     applyFilters(tasks.filter(task => task.status !== 'completed')), 
-    [tasks, filters]
+    [tasks, filters, urgencyLevels, forceUpdate]
   );
   
   const completedTasks = React.useMemo(() => {
     const filtered = applyFilters(tasks.filter(task => task.status === 'completed'));
     console.log('Completed tasks updated:', filtered.length, 'tasks');
     return filtered;
-  }, [tasks, filters]);
+  }, [tasks, filters, urgencyLevels, forceUpdate]);
   
   const incompleteTasks = React.useMemo(() => 
     applyFilters(tasks.filter(task => task.status === 'pending' || task.status === 'overdue')), 
-    [tasks, filters]
+    [tasks, filters, urgencyLevels, forceUpdate]
   );
   
   const overdueTasks = React.useMemo(() => 
@@ -250,7 +259,7 @@ export const useTasks = () => {
       if (!task.dueDate || task.status === 'completed') return false;
       return new Date() > task.dueDate;
     }), 
-    [tasks]
+    [tasks, forceUpdate]
   );
 
   return {
